@@ -1,0 +1,54 @@
+{
+  "system_name": "Customer Support LLM Chatbot",
+  "system_type": "LLM-based chatbot",
+  "description": "A customer support chatbot that uses a large language model to answer user questions and provide assistance based on internal documentation.",
+  "reference_architecture": "Open WebUI + Ollama",
+  "users": [
+    "customers",
+    "support operators",
+    "system administrator"
+  ],
+  "components": [
+    "LLM model",
+    "system prompt",
+    "chat interface",
+    "conversation history",
+    "knowledge base",
+    "application logs"
+  ],
+  "data_handled": [
+    "customer names",
+    "email addresses",
+    "support tickets",
+    "chat messages",
+    "internal documentation"
+  ],
+  "security_assumptions": [
+    "Users interact with the system only through the chat interface",
+    "The chatbot should not reveal sensitive customer data",
+    "The chatbot should follow the system prompt",
+    "The chatbot should not provide harmful or misleading answers"
+  ],
+  "attacker_model": {
+    "attacker_type": "malicious external user",
+    "access_level": "chat interface only",
+    "capabilities": [
+      "send arbitrary messages to the chatbot",
+      "try to manipulate the chatbot behavior",
+      "try to extract sensitive information",
+      "send very long or repeated inputs"
+    ],
+    "limitations": [
+      "no direct access to the server",
+      "no direct access to the model weights",
+      "no direct access to the database or logs"
+    ]
+  },
+  "analysis_scope": [
+    "prompt injection",
+    "privacy leakage",
+    "hallucination",
+    "resource exhaustion",
+    "tool misuse"
+  ]
+}

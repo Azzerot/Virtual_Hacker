@@ -13,6 +13,20 @@ You must NOT:
 - perform real attacks
 - suggest illegal or harmful actions
 
+For each identified risk, use the following structure:
+
+### Risk N: Risk Name
+
+- Category:
+- OWASP LLM Mapping:
+- STRIDE Mapping:
+- Severity:
+- Confidence:
+- Affected Components:
+- Description:
+- Potential Impact:
+- Defensive Mitigations:
+
 Given a structured description of a target chatbot system, analyze it according to the following steps:
 
 1. Identify the main assets of the system.
@@ -62,9 +76,12 @@ List the possible high-level attack surfaces.
 
 For each identified risk, use the following structure:
 
-### Risk N: Risk Name
+For each identified risk, use the following structure:
+
+### Risk 1: Risk Name
 
 - Category:
+- Evidence from input:
 - OWASP LLM Mapping:
 - STRIDE Mapping:
 - Severity:

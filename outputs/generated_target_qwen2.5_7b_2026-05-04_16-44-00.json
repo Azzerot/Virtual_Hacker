@@ -1,0 +1,32 @@
+{
+  "system_name": "unknown",
+  "system_type": "LLM-based chatbot",
+  "description": "Il sistema è un chatbot per assistenza clienti basato su LLM locale. Gli utenti sono clienti esterni e operatori del supporto. Il chatbot usa una knowledge base interna con documentazione aziendale. Salva la cronologia delle conversazioni e i log applicativi. In futuro potrebbe aprire ticket tramite API.",
+  "reference_architecture": "unknown",
+  "users": [
+    "clienti esterni",
+    "operatori del supporto"
+  ],
+  "components": [
+    "LLM-based chatbot",
+    "knowledge base interna con documentazione aziendale"
+  ],
+  "data_handled": [
+    "email",
+    "nomi clienti",
+    "messaggi",
+    "ticket di assistenza"
+  ],
+  "security_assumptions": [],
+  "attacker_model": {
+    "attacker_type": "unknown",
+    "access_level": "unknown",
+    "capabilities": [],
+    "limitations": []
+  },
+  "analysis_scope": [
+    "prompt injection",
+    "privacy leakage",
+    "hallucination"
+  ]
+}

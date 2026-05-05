@@ -1,0 +1,27 @@
+{
+  "quality_status": "partial",
+  "missing_fields": [
+    "attacker_model.attacker_type",
+    "attacker_model.access_level",
+    "attacker_model.capabilities",
+    "analysis_scope"
+  ],
+  "warnings": [
+    "System name is unknown.",
+    "Reference architecture is unknown.",
+    "Attacker type is unknown.",
+    "Attacker access level is unknown.",
+    "Attacker capabilities are not defined.",
+    "Attacker limitations are not defined.",
+    "Analysis scope is empty."
+  ],
+  "suggested_questions": [
+    "What is the name of the chatbot system?",
+    "Can you describe the chatbot architecture, including model, UI, backend, APIs, RAG, databases, or external tools?",
+    "What type of attacker should be considered? For example: anonymous user, authenticated user, malicious customer, insider, external attacker.",
+    "What access level does the attacker have? For example: public chat access, authenticated account, admin access, API access.",
+    "What can the attacker do? For example: send messages, upload files, call APIs, view responses, create accounts, access shared conversations.",
+    "What can the attacker not do? For example: no admin access, no database access, no source code access, no direct model access.",
+    "Which risk categories should be prioritized? Choose from: prompt injection, privacy leakage, hallucination, resource exhaustion, tool misuse, unauthorized access, information disclosure."
+  ]
+}

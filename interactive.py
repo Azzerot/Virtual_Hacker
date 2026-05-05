@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 from datetime import datetime
- from threading import Event
+from threading import Event
 import time
 import subprocess
 from typing import Optional

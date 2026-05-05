@@ -75,16 +75,21 @@ with st.sidebar:
 
     st.markdown("### Control Room")
 
-    st.session_state.mode = st.selectbox(
-        "Modalità",
-        ["Chat Assistant", "Risk Analysis", "OSINT Helper", "Report Generator"],
-        index=["Chat Assistant", "Risk Analysis", "OSINT Helper", "Report Generator"].index(st.session_state.mode),
-    )
+    st.session_state.mode = "Chat Assistant"
+    st.markdown(f"**Mode:** {st.session_state.mode}")
+
+    model_options = [
+        "Demo Mode",
+        "Qwen 2.5 7B",
+        "Mistral 7B",
+    ]
 
     st.session_state.model = st.selectbox(
         "Modello",
-        ["Demo Mode", "Qwen 2.5 7B", "Local LLM", "API Model"],
-        index=["Demo Mode", "Qwen 2.5 7B", "Local LLM", "API Model"].index(st.session_state.model),
+        model_options,
+        index=model_options.index(st.session_state.model)
+        if st.session_state.model in model_options
+        else 0,
     )
 
     st.markdown("### Session")
@@ -106,15 +111,7 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-        <div class="hint">
-            This view is intentionally defensive-only. Wire the chat input to your Ollama or report pipeline when you want live responses.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    
 
 if clear_chat:
     st.session_state.messages = [
@@ -223,15 +220,14 @@ with center_col:
             st.markdown(user_input)
 
         model_map = {
-            "Qwen 2.5 7B": "qwen2.5:7b",
-            "Local LLM": "qwen2.5:7b",
-            "API Model": "qwen2.5:7b",
+        "Qwen 2.5 7B": "qwen2.5:7b",
+        "Mistral 7B": "mistral:7b",
         }
 
         if st.session_state.model == "Demo Mode":
             response = (
                 "Demo Mode attiva.\n\n"
-                "Seleziona **Qwen 2.5 7B** nella sidebar per generare JSON e report reali."
+                "Seleziona **Qwen 2.5 7B** o **Mistral 7B** nella sidebar per generare JSON e report reali."
             )
             st.session_state.logs.append("[assistant] Demo response generated")
         else:

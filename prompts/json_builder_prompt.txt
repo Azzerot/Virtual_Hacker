@@ -8,17 +8,20 @@ Important rules:
 - Return only valid JSON.
 - Do not include markdown.
 - Do not include explanations.
+- Do not include comments.
 - Do not invent details that are not present in the description.
-- If information is missing, use "unknown" or an empty list.
+- Do not rename keys.
+- Do not omit required keys.
+- If information is missing, use "unknown" for string fields or an empty list for array fields.
 - Keep the output concise and structured.
 - The JSON must be suitable as input for a defensive security risk analysis agent.
 
-Use this JSON schema:
+Use exactly this JSON schema:
 
 {
   "system_name": "string or unknown",
   "system_type": "LLM-based chatbot",
-  "description": "string",
+  "description": "string or unknown",
   "reference_architecture": "string or unknown",
   "users": [],
   "components": [],
@@ -33,7 +36,22 @@ Use this JSON schema:
   "analysis_scope": []
 }
 
-For analysis_scope, include only relevant categories among:
+Field rules:
+- system_name: use the explicit system name if present, otherwise "unknown".
+- system_type: always use "LLM-based chatbot".
+- description: concise summary of the chatbot system.
+- reference_architecture: include architecture details explicitly mentioned by the user, otherwise "unknown".
+- users: list of user roles explicitly mentioned.
+- components: list of technical components explicitly mentioned.
+- data_handled: list of data types explicitly mentioned.
+- security_assumptions: list of security constraints, protections, or expected non-disclosure requirements explicitly mentioned.
+- attacker_model.attacker_type: attacker type explicitly mentioned, otherwise "unknown".
+- attacker_model.access_level: access level explicitly mentioned, otherwise "unknown".
+- attacker_model.capabilities: attacker capabilities explicitly mentioned.
+- attacker_model.limitations: attacker limitations explicitly mentioned.
+- analysis_scope: include only relevant categories from the allowed list below.
+
+Allowed values for analysis_scope:
 - prompt injection
 - privacy leakage
 - hallucination
@@ -41,3 +59,9 @@ For analysis_scope, include only relevant categories among:
 - tool misuse
 - unauthorized access
 - information disclosure
+
+Important:
+- analysis_scope must contain only values from the allowed list.
+- If no category is relevant or explicit, use an empty list.
+- Do not add extra fields.
+- Return only the JSON object.

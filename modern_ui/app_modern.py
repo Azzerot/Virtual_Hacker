@@ -1,8 +1,12 @@
 from datetime import datetime
 
+import html
 from pathlib import Path
+import queue
 
 import sys
+import threading
+import time
  
 import streamlit as st
  
@@ -20,6 +24,46 @@ from interactive import run_virtual_hacker_analysis
  
 LOGO_PATH = ROOT_DIR / "Logo.png"
  
+
+def _analysis_worker(output_queue, natural_description, model_name, stop_event):
+    try:
+        result = run_virtual_hacker_analysis(
+            natural_description=natural_description,
+            model_name=model_name,
+            stop_event=stop_event,
+        )
+    except Exception as exc:
+        if stop_event is not None and stop_event.is_set():
+            result = {
+                "ok": False,
+                "cancelled": True,
+                "error": "Analysis stopped by user.",
+            }
+        else:
+            result = {
+                "ok": False,
+                "error": str(exc),
+            }
+
+    output_queue.put(result)
+
+
+def _request_stop_run():
+    if st.session_state.analysis_stop_event is None:
+        return
+
+    st.session_state.analysis_stop_event.set()
+    st.session_state.analysis_status = "idle"
+    st.session_state.logs.append("[system] Stop requested by user")
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": "Ehi, hai stoppato tu la run. Sto chiudendo il processo Ollama adesso.",
+        }
+    )
+    st.toast("Run stoppata da te. Sto chiudendo Ollama.")
+    st.rerun()
+
  
 def build_quality_markdown(quality_result: dict | None) -> str:
 

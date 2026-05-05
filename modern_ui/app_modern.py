@@ -305,8 +305,19 @@ with st.sidebar:
         unsafe_allow_html=True,
 
     )
- 
- 
+
+    st.markdown('<div class="sidebar-stop-spacer"></div>', unsafe_allow_html=True)
+
+    sidebar_stop_requested = st.button(
+        "Stop run",
+        key="sidebar_stop_run",
+        use_container_width=True,
+        disabled=st.session_state.analysis_status not in {"running", "stopping"},
+    )
+
+    if sidebar_stop_requested:
+        _request_stop_run()
+
 if clear_chat:
 
     st.session_state.messages = [

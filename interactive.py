@@ -233,7 +233,7 @@ def generate_risk_report(model_name: str, target_system: dict) -> str:
     return call_ollama(model_name, virtual_hacker_prompt, user_message)
 
 
-def save_outputs(model_name: str, target_system: dict, risk_report: str) -> None:
+def save_outputs(model_name: str, target_system: dict, risk_report: str) -> dict:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -259,8 +259,46 @@ Input mode: natural language -> generated JSON -> validated JSON -> risk report
 
     report_path.write_text(final_report, encoding="utf-8")
 
-    print(f"\nGenerated target JSON saved in: {generated_target_path}")
-    print(f"Risk report saved in: {report_path}")
+    return {
+        "json_path": str(generated_target_path),
+        "report_path": str(report_path),
+        "timestamp": timestamp,
+    }
+
+
+
+def run_virtual_hacker_analysis(
+    natural_description: str,
+    model_name: str = "qwen2.5:7b",
+) -> dict:
+    natural_description = natural_description.strip()
+
+    if not natural_description:
+        return {
+            "ok": False,
+            "error": "No description provided.",
+        }
+
+    try:
+        target_system = build_target_json(model_name, natural_description)
+        risk_report = generate_risk_report(model_name, target_system)
+        output_paths = save_outputs(model_name, target_system, risk_report)
+
+        return {
+            "ok": True,
+            "target_system": target_system,
+            "risk_report": risk_report,
+            "json_path": output_paths["json_path"],
+            "report_path": output_paths["report_path"],
+            "timestamp": output_paths["timestamp"],
+        }
+
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e),
+        }
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -301,22 +339,21 @@ def main() -> None:
         print("No description provided.")
         return
 
-    print("\n[1/3] Building structured target JSON...")
+    print("\nRunning Virtual Hacker analysis...")
 
-    try:
-        target_system = build_target_json(model_name, natural_description)
-    except ValueError as e:
-        print("\nError while building target JSON:")
-        print(e)
+    result = run_virtual_hacker_analysis(
+        natural_description=natural_description,
+        model_name=model_name,
+    )
+
+    if not result["ok"]:
+        print("\nError:")
+        print(result["error"])
         return
 
-    print("[2/3] Generating defensive risk report...")
-    risk_report = generate_risk_report(model_name, target_system)
-
-    print("[3/3] Saving outputs...")
-    save_outputs(model_name, target_system, risk_report)
-
     print("\nDone.")
+    print(f"Generated target JSON saved in: {result['json_path']}")
+    print(f"Risk report saved in: {result['report_path']}")
 
 
 if __name__ == "__main__":

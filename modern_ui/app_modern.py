@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+import sys
 
 import streamlit as st
 
@@ -7,6 +8,13 @@ from modern_ui.styles import CSS
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from interactive import run_virtual_hacker_analysis
+
+
 LOGO_PATH = ROOT_DIR / "Logo.png"
 
 
@@ -43,6 +51,12 @@ if "model" not in st.session_state:
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+if "last_result" not in st.session_state:
+    st.session_state.last_result = None
+
+if "last_user_input" not in st.session_state:
+    st.session_state.last_user_input = ""
 
 
 with st.sidebar:
@@ -203,19 +217,53 @@ with center_col:
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
         st.session_state.logs.append(f"[user] {user_input}")
+        st.session_state.last_user_input = user_input
 
         with st.chat_message("user"):
             st.markdown(user_input)
 
-        response = (
-            f"I received your request for **{st.session_state.mode}**.\n\n"
-            f"Model selected: **{st.session_state.model}**\n\n"
-            "For now this screen is a polished demo shell. The next step is to connect the input "
-            "to the Ollama pipeline in [main.py](main.py) or the interactive flow in [interactive.py](interactive.py)."
-        )
+        model_map = {
+            "Qwen 2.5 7B": "qwen2.5:7b",
+            "Local LLM": "qwen2.5:7b",
+            "API Model": "qwen2.5:7b",
+        }
+
+        if st.session_state.model == "Demo Mode":
+            response = (
+                "Demo Mode attiva.\n\n"
+                "Seleziona **Qwen 2.5 7B** nella sidebar per generare JSON e report reali."
+            )
+            st.session_state.logs.append("[assistant] Demo response generated")
+        else:
+            ollama_model = model_map.get(st.session_state.model, "qwen2.5:7b")
+
+            with st.spinner("Virtual Hacker sta generando JSON e report..."):
+                result = run_virtual_hacker_analysis(
+                    natural_description=user_input,
+                    model_name=ollama_model,
+                )
+
+            if result.get("ok"):
+                st.session_state.last_result = result
+
+                response = (
+                    "Analisi completata.\n\n"
+                    f"**JSON generato:** `{result['json_path']}`\n\n"
+                    f"**Report generato:** `{result['report_path']}`\n\n"
+                    "## Report\n\n"
+                    f"{result['risk_report']}"
+                )
+
+                st.session_state.logs.append("[assistant] JSON and report generated")
+            else:
+                response = (
+                    "Errore durante l'analisi.\n\n"
+                    f"```text\n{result.get('error')}\n```"
+                )
+
+                st.session_state.logs.append("[assistant] Backend error")
 
         st.session_state.messages.append({"role": "assistant", "content": response})
-        st.session_state.logs.append("[assistant] Demo response generated")
 
         with st.chat_message("assistant"):
             st.markdown(response)

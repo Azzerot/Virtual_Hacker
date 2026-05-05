@@ -224,6 +224,18 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
+    st.markdown('<div class="sidebar-stop-spacer"></div>', unsafe_allow_html=True)
+
+    sidebar_stop_requested = st.button(
+        "Stop run",
+        key="sidebar_stop_run",
+        use_container_width=True,
+        disabled=st.session_state.analysis_status not in {"running", "stopping"},
+    )
+
+    if sidebar_stop_requested:
+        _request_stop_run()
+
 if clear_chat:
     st.session_state.messages = [
         {
@@ -387,84 +399,44 @@ with center_col:
     )
 
 with right_col:
-    st.markdown(
-        """
-        <div class="panel-card system-log-panel">
-            <div class="panel-title">
-                <h3>System Log</h3>
-                <span>Last 8 events</span>
-            </div>
-            <div class="log-box">{}</div>
-        </div>
-        """.format(html.escape("\n".join(st.session_state.logs[-8:]))),
-        unsafe_allow_html=True,
-    )
-
+    log_html = html.escape("\n".join(st.session_state.logs[-8:]))
     model_label = html.escape(st.session_state.analysis_model_label or st.session_state.model)
     run_status = html.escape(st.session_state.analysis_status.upper())
 
     if st.session_state.analysis_status == "running":
         action_text = '<span class="status-ok"><span class="loading-dot"></span> Loading...</span>'
         run_label = model_label
+    elif st.session_state.analysis_status == "stopping":
+        action_text = '<span class="status-ok"><span class="loading-dot"></span> Stopping...</span>'
+        run_label = model_label
     else:
         action_text = '<span class="status-ok">Ready</span>'
         run_label = "Idle"
 
-    st.markdown(
-        f"""
-        <div class="panel-card">
-            <div class="panel-title">
-                <h3>Ollama Run</h3>
-                <span>{run_label}</span>
-            </div>
-            <div class="status-card">
-                <p>State: <span class="status-ok">{run_status}</span></p>
-                <p>Action: {action_text}</p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    right_rail_html = (
+        '<div class="right-rail-fixed">'
+        '<div class="panel-card system-log-panel">'
+        '<div class="panel-title">'
+        '<h3>System Log</h3>'
+        '<span>Last 8 events</span>'
+        '</div>'
+        f'<div class="log-box">{log_html}</div>'
+        '</div>'
+        '<div class="panel-card">'
+        '<div class="panel-title">'
+        '<h3>Ollama Run</h3>'
+        f'<span>{run_label}</span>'
+        '</div>'
+        '<div class="status-card">'
+        f'<p>State: <span class="status-ok">{run_status}</span></p>'
+        f'<p>Action: {action_text}</p>'
+        '</div>'
+        '</div>'
+        '<div class="rail-button disabled">Export markdown</div>'
+        '</div>'
     )
 
-    stop_requested = st.button(
-        "Stop run",
-        key="panel_stop_run",
-        use_container_width=True,
-        disabled=st.session_state.analysis_status != "running",
-    )
-
-    if stop_requested:
-        _request_stop_run()
-
-    st.markdown(
-        """
-        <div class="panel-card">
-            <div class="panel-title">
-                <h3>Quick Actions</h3>
-                <span>Static for now</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    generate_report = st.button("Generate report", use_container_width=True)
-
-    if generate_report:
-        st.session_state.logs.append("[system] Generate report clicked")
-        st.toast("Hook this to the report pipeline next.")
-
-    export_markdown = st.button("Export markdown", use_container_width=True)
-
-    if export_markdown:
-        st.session_state.logs.append("[system] Export markdown clicked")
-        st.toast("Add file export wiring next.")
-
-    run_scan = st.button("Run scan", use_container_width=True)
-
-    if run_scan:
-        st.session_state.logs.append("[system] Run scan clicked")
-        st.toast("Connect this to the analysis backend next.")
+    st.markdown(right_rail_html, unsafe_allow_html=True)
 
 st.markdown(
     '<div class="footer">Virtual Hacker · Streamlit UI concept · Separate file edition</div>',

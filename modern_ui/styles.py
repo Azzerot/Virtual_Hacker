@@ -271,6 +271,10 @@ CSS = """
         font-size: 0.88rem;
     }
 
+    .sidebar-stop-spacer {
+        height: 0.95rem;
+    }
+
     .status-ok {
         color: var(--accent-2);
         font-weight: 700;
@@ -307,48 +311,6 @@ CSS = """
     .system-log-panel {
         margin-top: 0.9rem;
         margin-left: 2rem;
-    }
-
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) {
-        position: fixed;
-        top: 5.6rem;
-        right: 2.8rem;
-        width: min(22.5vw, 360px) !important;
-        max-height: calc(100vh - 6.5rem);
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 0.25rem 0.25rem 0.8rem 0.75rem;
-        border-left: 1px solid rgba(134, 239, 172, 0.10);
-        background:
-            linear-gradient(180deg, rgba(4, 12, 18, 0.72), rgba(5, 10, 18, 0.20));
-        backdrop-filter: blur(10px);
-        z-index: 20;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(134, 239, 172, 0.28) rgba(255, 255, 255, 0.03);
-    }
-
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3)::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3)::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 999px;
-    }
-
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3)::-webkit-scrollbar-thumb {
-        background: rgba(134, 239, 172, 0.22);
-        border-radius: 999px;
-        border: 2px solid rgba(5, 10, 18, 0.94);
-    }
-
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .panel-card,
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .system-log-panel {
-        margin-left: 0;
-    }
-
-    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .system-log-panel {
-        margin-top: 0;
     }
 
     .right-rail-fixed {
@@ -658,16 +620,6 @@ CSS = """
             backdrop-filter: none;
         }
 
-        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) {
-            position: static;
-            width: auto !important;
-            max-height: none;
-            overflow: visible;
-            padding: 0;
-            border-left: 0;
-            background: transparent;
-            backdrop-filter: none;
-        }
     }
 
     @media (max-width: 768px) {
@@ -684,20 +636,8 @@ CSS = """
             background: transparent;
         }
 
-        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) {
-            position: static;
-            width: auto !important;
-            max-height: none;
-            overflow: visible;
-            padding: 0;
-            border-left: 0;
-            background: transparent;
-        }
-
         .right-rail-fixed .panel-card,
-        .right-rail-fixed .system-log-panel,
-        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .panel-card,
-        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .system-log-panel {
+        .right-rail-fixed .system-log-panel {
             margin-left: 0;
         }
 

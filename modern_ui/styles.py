@@ -315,11 +315,32 @@ CSS = """
         padding: 1.05rem 1.1rem;
         font-family: 'JetBrains Mono', monospace;
         color: #b4f1d0;
-        min-height: 285px;
+        max-height: 285px;
+        overflow-y: auto;
+        overflow-x: hidden;
         white-space: pre-wrap;
         line-height: 1.68;
         font-size: 0.98rem;
         font-weight: 500;
+    }
+
+    .log-box::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .log-box::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 999px;
+    }
+
+    .log-box::-webkit-scrollbar-thumb {
+        background: rgba(103, 232, 249, 0.22);
+        border-radius: 999px;
+        border: 2px solid rgba(5, 10, 18, 0.94);
+    }
+
+    .log-box::-webkit-scrollbar-thumb:hover {
+        background: rgba(103, 232, 249, 0.34);
     }
 
     .chat-shell {

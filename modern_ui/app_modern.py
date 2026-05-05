@@ -1,6 +1,9 @@
 from datetime import datetime
 from pathlib import Path
+import queue
 import sys
+import threading
+import time
 
 import streamlit as st
 
@@ -18,6 +21,46 @@ from interactive import run_virtual_hacker_analysis
 LOGO_PATH = ROOT_DIR / "Logo.png"
 
 
+def _analysis_worker(output_queue, natural_description, model_name, stop_event):
+    try:
+        result = run_virtual_hacker_analysis(
+            natural_description=natural_description,
+            model_name=model_name,
+            stop_event=stop_event,
+        )
+    except Exception as exc:
+        if stop_event is not None and stop_event.is_set():
+            result = {
+                "ok": False,
+                "cancelled": True,
+                "error": "Analysis stopped by user.",
+            }
+        else:
+            result = {
+                "ok": False,
+                "error": str(exc),
+            }
+
+    output_queue.put(result)
+
+
+def _request_stop_run():
+    if st.session_state.analysis_stop_event is None:
+        return
+
+    st.session_state.analysis_stop_event.set()
+    st.session_state.analysis_status = "idle"
+    st.session_state.logs.append("[system] Stop requested by user")
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": "Ehi, hai stoppato tu la run. Sto chiudendo il processo Ollama adesso.",
+        }
+    )
+    st.toast("Run stoppata da te. Sto chiudendo Ollama.")
+    st.rerun()
+
+
 st.set_page_config(
     page_title="Virtual Hacker",
     page_icon="🛡️",
@@ -32,7 +75,12 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Ciao, sono **Virtual Hacker**. Descrivi il target, il contesto o l'obiettivo dell'analisi.",
+            "content": (
+                "Ciao, sono **Virtual Hacker**. Descrivi il sistema LLM o chatbot che vuoi analizzare: "
+                "nome del sistema, scopo, architettura, utenti, componenti, dati trattati, assunzioni di sicurezza, "
+                "possibile attaccante e rischi da valutare. Userò queste informazioni per generare un JSON strutturato "
+                "e un report difensivo sulle potenziali vulnerabilità."
+            ),
         }
     ]
 
@@ -57,6 +105,66 @@ if "last_result" not in st.session_state:
 
 if "last_user_input" not in st.session_state:
     st.session_state.last_user_input = ""
+
+if "analysis_status" not in st.session_state:
+    st.session_state.analysis_status = "idle"
+
+if "analysis_thread" not in st.session_state:
+    st.session_state.analysis_thread = None
+
+if "analysis_queue" not in st.session_state:
+    st.session_state.analysis_queue = None
+
+if "analysis_stop_event" not in st.session_state:
+    st.session_state.analysis_stop_event = None
+
+if st.session_state.analysis_queue is not None:
+    try:
+        analysis_result = st.session_state.analysis_queue.get_nowait()
+    except queue.Empty:
+        if (
+            st.session_state.analysis_thread is not None
+            and not st.session_state.analysis_thread.is_alive()
+        ):
+            if st.session_state.analysis_status == "stopping":
+                st.session_state.logs.append("[system] Analysis stopped")
+
+            st.session_state.analysis_status = "idle"
+            st.session_state.analysis_thread = None
+            st.session_state.analysis_queue = None
+            st.session_state.analysis_stop_event = None
+    else:
+        st.session_state.analysis_thread = None
+        st.session_state.analysis_queue = None
+        st.session_state.analysis_stop_event = None
+        st.session_state.analysis_status = "idle"
+
+        if analysis_result.get("ok"):
+            st.session_state.last_result = analysis_result
+
+            response = (
+                "Analisi completata.\n\n"
+                f"**JSON generato:** `{analysis_result['json_path']}`\n\n"
+                f"**Report generato:** `{analysis_result['report_path']}`\n\n"
+                "## Report\n\n"
+                f"{analysis_result['risk_report']}"
+            )
+
+            st.session_state.logs.append("[assistant] JSON and report generated")
+
+        elif analysis_result.get("cancelled"):
+            response = "Ehi, hai stoppato tu la run. Analisi interrotta e processo Ollama fermato."
+            st.session_state.logs.append("[system] Analysis stopped by user")
+
+        else:
+            response = (
+                "Errore durante l'analisi.\n\n"
+                f"```text\n{analysis_result.get('error')}\n```"
+            )
+
+            st.session_state.logs.append("[assistant] Backend error")
+
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 with st.sidebar:
@@ -106,23 +214,23 @@ with st.sidebar:
             <p>UI: <span class="status-ok">ACTIVE</span></p>
             <p>Mode: <span class="status-ok">{st.session_state.mode}</span></p>
             <p>Model: <span class="status-ok">{st.session_state.model}</span></p>
+            <p>Run: <span class="status-ok">{st.session_state.analysis_status.upper()}</span></p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    
-
 if clear_chat:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Ciao, sono **Virtual Hacker**. Descrivi il target, il contesto o l'obiettivo dell'analisi.",
+            "content": (
+                "Ciao, sono **Virtual Hacker**. Descrivi il sistema LLM o chatbot che vuoi analizzare: "
+                "nome del sistema, scopo, architettura, utenti, componenti, dati trattati, assunzioni di sicurezza, "
+                "possibile attaccante e rischi da valutare. Userò queste informazioni per generare un JSON strutturato "
+                "e un report difensivo sulle potenziali vulnerabilità."
+            ),
         }
-    ]
-    st.session_state.logs = [
-        "[system] Chat cleared",
-        "[system] Awaiting user input",
     ]
     st.rerun()
 
@@ -209,7 +317,7 @@ with center_col:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    user_input = st.chat_input("Describe the target chatbot...")
+    user_input = st.chat_input("Descrivi il sistema LLM da analizzare...")
 
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
@@ -220,8 +328,8 @@ with center_col:
             st.markdown(user_input)
 
         model_map = {
-        "Qwen 2.5 7B": "qwen2.5:7b",
-        "Mistral 7B": "mistral:7b",
+            "Qwen 2.5 7B": "qwen2.5:7b",
+            "Mistral 7B": "mistral:7b",
         }
 
         if st.session_state.model == "Demo Mode":
@@ -230,34 +338,37 @@ with center_col:
                 "Seleziona **Qwen 2.5 7B** o **Mistral 7B** nella sidebar per generare JSON e report reali."
             )
             st.session_state.logs.append("[assistant] Demo response generated")
+        elif st.session_state.analysis_thread is not None and st.session_state.analysis_thread.is_alive():
+            response = (
+                "C'e' gia' un'analisi Ollama in corso.\n\n"
+                "Usa **Stop run** prima di avviarne un'altra."
+            )
+            st.session_state.logs.append("[system] Analysis already running")
         else:
             ollama_model = model_map.get(st.session_state.model, "qwen2.5:7b")
+            st.session_state.analysis_status = "running"
+            st.session_state.analysis_queue = queue.Queue()
+            st.session_state.analysis_stop_event = threading.Event()
+            st.session_state.analysis_thread = threading.Thread(
+                target=_analysis_worker,
+                args=(
+                    st.session_state.analysis_queue,
+                    user_input,
+                    ollama_model,
+                    st.session_state.analysis_stop_event,
+                ),
+                daemon=True,
+            )
+            st.session_state.analysis_thread.start()
+            st.session_state.logs.append("[system] Ollama run started")
 
-            with st.spinner("Virtual Hacker sta generando JSON e report..."):
-                result = run_virtual_hacker_analysis(
-                    natural_description=user_input,
-                    model_name=ollama_model,
-                )
+            response = (
+                "Analisi avviata su Ollama.\n\n"
+                "Puoi interromperla con **Stop run** nel pannello laterale."
+            )
 
-            if result.get("ok"):
-                st.session_state.last_result = result
-
-                response = (
-                    "Analisi completata.\n\n"
-                    f"**JSON generato:** `{result['json_path']}`\n\n"
-                    f"**Report generato:** `{result['report_path']}`\n\n"
-                    "## Report\n\n"
-                    f"{result['risk_report']}"
-                )
-
-                st.session_state.logs.append("[assistant] JSON and report generated")
-            else:
-                response = (
-                    "Errore durante l'analisi.\n\n"
-                    f"```text\n{result.get('error')}\n```"
-                )
-
-                st.session_state.logs.append("[assistant] Backend error")
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            st.rerun()
 
         st.session_state.messages.append({"role": "assistant", "content": response})
 
@@ -279,6 +390,34 @@ with right_col:
         """.format("\n".join(st.session_state.logs[-8:])),
         unsafe_allow_html=True,
     )
+
+    if st.session_state.analysis_status == "running":
+        st.markdown(
+            f"""
+            <div class="panel-card">
+                <div class="panel-title">
+                    <h3>Ollama Run</h3>
+                    <span>{st.session_state.analysis_status.title()}</span>
+                </div>
+                <div class="status-card">
+                    <p>State: <span class="status-ok">{st.session_state.analysis_status.upper()}</span></p>
+                    <p>Action: <span class="status-ok">Stop run available</span></p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        button_indent_stop, button_col_stop = st.columns([0.06, 0.95])
+        with button_col_stop:
+            stop_requested = st.button(
+                "Stop run",
+                key="panel_stop_run",
+                use_container_width=True,
+            )
+
+        if stop_requested:
+            _request_stop_run()
 
     st.markdown(
         """

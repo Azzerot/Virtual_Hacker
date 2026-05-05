@@ -2,6 +2,10 @@ import argparse
 import json
 from pathlib import Path
 from datetime import datetime
+from threading import Event
+import time
+import subprocess
+from typing import Optional
 
 import ollama
 from jsonschema import validate, ValidationError
@@ -178,25 +182,110 @@ def extract_json_from_model_output(raw_output: str) -> dict:
     return parsed_json
 
 
-def call_ollama(model_name: str, system_prompt: str, user_message: str) -> str:
-    response = ollama.chat(
-        model=model_name,
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-            {
-                "role": "user",
-                "content": user_message,
-            },
-        ],
-    )
+def _kill_ollama_on_stop(stop_event: Event):
+    """Monitor stop_event and kill Ollama process when triggered."""
+    stop_event.wait()
+    
+    if stop_event.is_set():
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/IM", "ollama.exe"],
+                capture_output=True,
+                timeout=2,
+            )
+        except Exception:
+            try:
+                subprocess.run(
+                    ["pkill", "-f", "ollama"],
+                    capture_output=True,
+                    timeout=2,
+                )
+            except Exception:
+                pass
 
-    return response["message"]["content"]
+
+def _raise_if_cancelled(stop_event: Optional[Event]) -> None:
+    if stop_event is not None and stop_event.is_set():
+        raise RuntimeError("Analysis stopped by user.")
 
 
-def build_target_json(model_name: str, natural_description: str) -> dict:
+def call_ollama(
+    model_name: str,
+    system_prompt: str,
+    user_message: str,
+    stop_event: Optional[Event] = None,
+) -> str:
+    _raise_if_cancelled(stop_event)
+
+    if stop_event is None:
+        response = ollama.chat(
+            model=model_name,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_message,
+                },
+            ],
+        )
+
+        return response["message"]["content"]
+
+    kill_thread = None
+    if stop_event is not None:
+        from threading import Thread
+        kill_thread = Thread(target=_kill_ollama_on_stop, args=(stop_event,), daemon=True)
+        kill_thread.start()
+
+    try:
+        streamed_response = ollama.chat(
+            model=model_name,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": user_message,
+                },
+            ],
+            stream=True,
+        )
+
+        chunks: list[str] = []
+        last_check = time.time()
+
+        for chunk in streamed_response:
+            _raise_if_cancelled(stop_event)
+
+            now = time.time()
+            if now - last_check > 0.1:
+                _raise_if_cancelled(stop_event)
+                last_check = now
+
+            content = chunk.get("message", {}).get("content", "")
+            if content:
+                chunks.append(content)
+
+        return "".join(chunks)
+
+    except RuntimeError as e:
+        if "cancelled" in str(e).lower() or "stopped by user" in str(e).lower():
+            time.sleep(0.5)
+            raise
+        raise
+
+
+
+def build_target_json(
+    model_name: str,
+    natural_description: str,
+    stop_event: Optional[Event] = None,
+) -> dict:
     json_builder_prompt = load_text_file(JSON_BUILDER_PROMPT_PATH)
 
     user_message = (
@@ -206,7 +295,12 @@ def build_target_json(model_name: str, natural_description: str) -> dict:
         f"Description:\n{natural_description}"
     )
 
-    raw_output = call_ollama(model_name, json_builder_prompt, user_message)
+    raw_output = call_ollama(
+        model_name,
+        json_builder_prompt,
+        user_message,
+        stop_event=stop_event,
+    )
 
     target_system = extract_json_from_model_output(raw_output)
 
@@ -226,11 +320,20 @@ def build_risk_analysis_message(target_system: dict) -> str:
     )
 
 
-def generate_risk_report(model_name: str, target_system: dict) -> str:
+def generate_risk_report(
+    model_name: str,
+    target_system: dict,
+    stop_event: Optional[Event] = None,
+) -> str:
     virtual_hacker_prompt = load_text_file(VIRTUAL_HACKER_PROMPT_PATH)
     user_message = build_risk_analysis_message(target_system)
 
-    return call_ollama(model_name, virtual_hacker_prompt, user_message)
+    return call_ollama(
+        model_name,
+        virtual_hacker_prompt,
+        user_message,
+        stop_event=stop_event,
+    )
 
 
 def save_outputs(model_name: str, target_system: dict, risk_report: str) -> dict:
@@ -270,6 +373,7 @@ Input mode: natural language -> generated JSON -> validated JSON -> risk report
 def run_virtual_hacker_analysis(
     natural_description: str,
     model_name: str = "qwen2.5:7b",
+    stop_event: Optional[Event] = None,
 ) -> dict:
     natural_description = natural_description.strip()
 
@@ -280,8 +384,19 @@ def run_virtual_hacker_analysis(
         }
 
     try:
-        target_system = build_target_json(model_name, natural_description)
-        risk_report = generate_risk_report(model_name, target_system)
+        _raise_if_cancelled(stop_event)
+        target_system = build_target_json(
+            model_name,
+            natural_description,
+            stop_event=stop_event,
+        )
+        _raise_if_cancelled(stop_event)
+        risk_report = generate_risk_report(
+            model_name,
+            target_system,
+            stop_event=stop_event,
+        )
+        _raise_if_cancelled(stop_event)
         output_paths = save_outputs(model_name, target_system, risk_report)
 
         return {
@@ -294,6 +409,13 @@ def run_virtual_hacker_analysis(
         }
 
     except Exception as e:
+        if stop_event is not None and stop_event.is_set():
+            return {
+                "ok": False,
+                "cancelled": True,
+                "error": "Analysis stopped by user.",
+            }
+
         return {
             "ok": False,
             "error": str(e),

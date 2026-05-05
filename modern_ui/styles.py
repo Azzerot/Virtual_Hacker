@@ -276,6 +276,28 @@ CSS = """
         font-weight: 700;
     }
 
+    .loading-dot {
+        display: inline-block;
+        width: 0.72rem;
+        height: 0.72rem;
+        margin-right: 0.45rem;
+        border-radius: 999px;
+        border: 2px solid rgba(103, 232, 249, 0.24);
+        border-top-color: var(--accent);
+        vertical-align: -0.08rem;
+        animation: loading-spin 0.85s linear infinite;
+    }
+
+    @keyframes loading-spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     .panel-card {
         padding: 0.9rem;
         margin-bottom: 0.75rem;
@@ -285,6 +307,119 @@ CSS = """
     .system-log-panel {
         margin-top: 0.9rem;
         margin-left: 2rem;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) {
+        position: fixed;
+        top: 5.6rem;
+        right: 2.8rem;
+        width: min(22.5vw, 360px) !important;
+        max-height: calc(100vh - 6.5rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0.25rem 0.25rem 0.8rem 0.75rem;
+        border-left: 1px solid rgba(134, 239, 172, 0.10);
+        background:
+            linear-gradient(180deg, rgba(4, 12, 18, 0.72), rgba(5, 10, 18, 0.20));
+        backdrop-filter: blur(10px);
+        z-index: 20;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(134, 239, 172, 0.28) rgba(255, 255, 255, 0.03);
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3)::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3)::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 999px;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3)::-webkit-scrollbar-thumb {
+        background: rgba(134, 239, 172, 0.22);
+        border-radius: 999px;
+        border: 2px solid rgba(5, 10, 18, 0.94);
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .panel-card,
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .system-log-panel {
+        margin-left: 0;
+    }
+
+    [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .system-log-panel {
+        margin-top: 0;
+    }
+
+    .right-rail-fixed {
+        position: fixed;
+        top: 5.6rem;
+        right: 2.8rem;
+        width: min(22.5vw, 360px);
+        max-height: calc(100vh - 6.5rem);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0.25rem 0.25rem 0.8rem 0.75rem;
+        border-left: 1px solid rgba(134, 239, 172, 0.10);
+        background:
+            linear-gradient(180deg, rgba(4, 12, 18, 0.72), rgba(5, 10, 18, 0.20));
+        backdrop-filter: blur(10px);
+        z-index: 20;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(134, 239, 172, 0.28) rgba(255, 255, 255, 0.03);
+    }
+
+    .right-rail-fixed::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .right-rail-fixed::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 999px;
+    }
+
+    .right-rail-fixed::-webkit-scrollbar-thumb {
+        background: rgba(134, 239, 172, 0.22);
+        border-radius: 999px;
+        border: 2px solid rgba(5, 10, 18, 0.94);
+    }
+
+    .right-rail-fixed .panel-card,
+    .right-rail-fixed .system-log-panel {
+        margin-left: 0;
+    }
+
+    .right-rail-fixed .system-log-panel {
+        margin-top: 0;
+    }
+
+    .rail-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.5rem;
+        width: 100%;
+        margin: 0 0 0.75rem;
+        border-radius: 0.72rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: linear-gradient(180deg, rgba(13, 22, 38, 0.92), rgba(6, 12, 22, 0.98));
+        color: var(--text) !important;
+        text-decoration: none !important;
+        font-weight: 600;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+        transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .rail-button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(134, 239, 172, 0.30);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+    }
+
+    .rail-button.disabled {
+        opacity: 0.48;
+        pointer-events: none;
+        cursor: default;
     }
 
     .panel-title {
@@ -354,6 +489,35 @@ CSS = """
     .chat-column {
         max-width: 900px;
         margin: 0 auto;
+    }
+
+    .chat-scroll {
+        max-height: calc(100vh - 330px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 0.4rem;
+        margin-right: -0.15rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(103, 232, 249, 0.28) rgba(255, 255, 255, 0.03);
+    }
+
+    .chat-scroll::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .chat-scroll::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 999px;
+    }
+
+    .chat-scroll::-webkit-scrollbar-thumb {
+        background: rgba(103, 232, 249, 0.22);
+        border-radius: 999px;
+        border: 2px solid rgba(5, 10, 18, 0.94);
+    }
+
+    .chat-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(103, 232, 249, 0.34);
     }
 
     [data-testid="stChatMessage"] {
@@ -482,11 +646,63 @@ CSS = """
         .metric-card {
             width: 100%;
         }
+
+        .right-rail-fixed {
+            position: static;
+            width: auto;
+            max-height: none;
+            overflow: visible;
+            padding: 0;
+            border-left: 0;
+            background: transparent;
+            backdrop-filter: none;
+        }
+
+        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) {
+            position: static;
+            width: auto !important;
+            max-height: none;
+            overflow: visible;
+            padding: 0;
+            border-left: 0;
+            background: transparent;
+            backdrop-filter: none;
+        }
     }
 
     @media (max-width: 768px) {
         .metric-row {
             grid-template-columns: 1fr;
+        }
+
+        .right-rail-fixed {
+            position: static;
+            max-height: none;
+            overflow: visible;
+            padding: 0;
+            border-left: 0;
+            background: transparent;
+        }
+
+        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) {
+            position: static;
+            width: auto !important;
+            max-height: none;
+            overflow: visible;
+            padding: 0;
+            border-left: 0;
+            background: transparent;
+        }
+
+        .right-rail-fixed .panel-card,
+        .right-rail-fixed .system-log-panel,
+        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .panel-card,
+        [data-testid="stHorizontalBlock"]:has(.chat-column) > [data-testid="column"]:nth-child(3) .system-log-panel {
+            margin-left: 0;
+        }
+
+        .chat-scroll {
+            max-height: calc(100vh - 360px);
         }
 
         .hero h2 {

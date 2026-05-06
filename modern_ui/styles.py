@@ -214,12 +214,21 @@ CSS = """
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
     }
 
+    .metrics-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.55rem;
+        max-width: 900px;
+        margin: 0 auto 0.8rem;
+        padding: 0 1rem;
+    }
+
     .metric-card {
-        padding: 0.85rem 0.9rem;
+        padding: 0.75rem 0.75rem;
         max-width: none;
         width: 100%;
         margin: 0;
-        min-height: 104px;
+        min-height: 90px;
         position: relative;
         overflow: hidden;
     }
@@ -313,77 +322,6 @@ CSS = """
         margin-left: 2rem;
     }
 
-    .right-rail-fixed {
-        position: fixed;
-        top: 5.6rem;
-        right: 2.8rem;
-        width: min(22.5vw, 360px);
-        max-height: calc(100vh - 6.5rem);
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 0.25rem 0.25rem 0.8rem 0.75rem;
-        border-left: 1px solid rgba(134, 239, 172, 0.10);
-        background:
-            linear-gradient(180deg, rgba(4, 12, 18, 0.72), rgba(5, 10, 18, 0.20));
-        backdrop-filter: blur(10px);
-        z-index: 20;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(134, 239, 172, 0.28) rgba(255, 255, 255, 0.03);
-    }
-
-    .right-rail-fixed::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    .right-rail-fixed::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 999px;
-    }
-
-    .right-rail-fixed::-webkit-scrollbar-thumb {
-        background: rgba(134, 239, 172, 0.22);
-        border-radius: 999px;
-        border: 2px solid rgba(5, 10, 18, 0.94);
-    }
-
-    .right-rail-fixed .panel-card,
-    .right-rail-fixed .system-log-panel {
-        margin-left: 0;
-    }
-
-    .right-rail-fixed .system-log-panel {
-        margin-top: 0;
-    }
-
-    .rail-button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 2.5rem;
-        width: 100%;
-        margin: 0 0 0.75rem;
-        border-radius: 0.72rem;
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        background: linear-gradient(180deg, rgba(13, 22, 38, 0.92), rgba(6, 12, 22, 0.98));
-        color: var(--text) !important;
-        text-decoration: none !important;
-        font-weight: 600;
-        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
-        transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-    }
-
-    .rail-button:hover {
-        transform: translateY(-1px);
-        border-color: rgba(134, 239, 172, 0.30);
-        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-    }
-
-    .rail-button.disabled {
-        opacity: 0.48;
-        pointer-events: none;
-        cursor: default;
-    }
-
     .panel-title {
         display: flex;
         align-items: center;
@@ -409,16 +347,16 @@ CSS = """
         background: linear-gradient(180deg, rgba(2, 7, 14, 0.98), rgba(5, 10, 18, 0.94));
         border: 1px solid rgba(103, 232, 249, 0.14);
         border-radius: 0.75rem;
-        padding: 1.05rem 1.1rem;
+        padding: 0.8rem 0.9rem;
         font-family: 'JetBrains Mono', monospace;
         color: #b4f1d0;
-        max-height: 285px;
+        max-height: 200px;
         overflow-y: auto;
         overflow-x: hidden;
         white-space: pre-wrap;
-        line-height: 1.68;
-        font-size: 0.98rem;
-        font-weight: 500;
+        line-height: 1.5;
+        font-size: 0.8rem;
+        font-weight: 400;
     }
 
     .log-box::-webkit-scrollbar {
@@ -488,6 +426,8 @@ CSS = """
         border-radius: 0.75rem;
         padding: 0.9rem 1rem;
         margin-bottom: 0.72rem;
+        margin-left: 0;
+        margin-right: 0;
         backdrop-filter: blur(8px);
     }
 
@@ -653,5 +593,163 @@ CSS = """
             max-width: 100%;
         }
     }
+
+    .quality-box {
+        font-size: 0.78rem;
+        color: var(--muted);
+        line-height: 1.45;
+    }
+
+    .quality-box p {
+        margin: 0.35rem 0;
+    }
+
+    .quality-box ul {
+        margin: 0.35rem 0 0.7rem 1rem;
+        padding-left: 0.7rem;
+    }
+
+    .quality-box li {
+        margin-bottom: 0.25rem;
+    }
+
+    .quality-box strong {
+        color: var(--text);
+    }
+
+    .right-muted {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin: 0;
+    }
+
+/* Main area: lascia spazio alla sidebar destra */
+[data-testid="stMain"] {
+    padding-right: 380px;
+}
+
+/* Centra davvero tutto il contenuto principale */
+[data-testid="stMain"] .block-container {
+    max-width: 1050px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+/* Logo, metriche e chat centrati */
+.page-title,
+.page-subtitle,
+.metrics-container,
+.chat-column {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.metrics-container {
+    width: 100%;
+}
+
+/* Sidebar destra unica */
+.right-sidebar-fixed {
+    position: fixed;
+    top: 52px;
+    right: 0;
+    width: 360px;
+    height: calc(100vh - 52px);
+    background: linear-gradient(180deg, rgba(4, 9, 18, 0.99), rgba(5, 11, 21, 0.98));
+    border-left: 1px solid rgba(148, 163, 184, 0.13);
+    box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem 1rem 2rem 1.2rem;
+    z-index: 19;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(134, 239, 172, 0.28) rgba(255, 255, 255, 0.03);
+}
+
+.right-sidebar-fixed::-webkit-scrollbar {
+    width: 8px;
+}
+
+.right-sidebar-fixed::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 999px;
+}
+
+.right-sidebar-fixed::-webkit-scrollbar-thumb {
+    background: rgba(134, 239, 172, 0.22);
+    border-radius: 999px;
+    border: 2px solid rgba(5, 10, 18, 0.94);
+}
+
+.right-sidebar-fixed::-webkit-scrollbar-thumb:hover {
+    background: rgba(134, 239, 172, 0.34);
+}
+
+.right-sidebar-fixed .panel-card {
+    margin-left: 0;
+    margin-bottom: 0.85rem;
+}
+
+.right-sidebar-fixed .system-log-panel {
+    margin-top: 0;
+}
+
+.quality-box {
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.quality-box p {
+    margin: 0.35rem 0;
+}
+
+.quality-box ul {
+    margin: 0.35rem 0 0.7rem 1rem;
+    padding-left: 0.7rem;
+}
+
+.quality-box li {
+    margin-bottom: 0.25rem;
+}
+
+.quality-box strong {
+    color: var(--text);
+}
+
+.quality-item {
+    color: var(--muted);
+    font-size: 0.76rem;
+    line-height: 1.4;
+    margin: 0.2rem 0;
+}
+
+.right-muted {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* Mobile/tablet: la sidebar destra torna nel flow */
+@media (max-width: 1200px) {
+    [data-testid="stMain"] {
+        padding-right: 0;
+    }
+
+    .right-sidebar-fixed {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 1rem;
+        padding-bottom: 1rem;
+    }
+}
+
+
+
+
 </style>
 """

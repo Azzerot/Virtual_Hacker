@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from textwrap import dedent
 import html
 from pathlib import Path
 import queue
@@ -444,55 +444,35 @@ st.markdown(
 
 
 # -----------------------------
-# Metrics
+# Metrics (centered)
 # -----------------------------
 
-metric_col_1, metric_col_2, metric_col_3 = st.columns(3)
-
-with metric_col_1:
-    st.markdown(
-        """
-<div class="metric-card">
-<div class="metric-label">Messages</div>
-<div class="metric-value">{}</div>
-<div class="metric-subtitle">Conversation turns</div>
+metrics_html = f"""
+<div class="metrics-container">
+    <div class="metric-card">
+        <div class="metric-label">Messages</div>
+        <div class="metric-value">{len(st.session_state.messages)}</div>
+        <div class="metric-subtitle">Conversation turns</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Mode</div>
+        <div class="metric-value">{st.session_state.mode}</div>
+        <div class="metric-subtitle">Current workflow</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-label">Model</div>
+        <div class="metric-value">{st.session_state.model}</div>
+        <div class="metric-subtitle">Backend target</div>
+    </div>
 </div>
-        """.format(
-            len(st.session_state.messages)
-        ),
-        unsafe_allow_html=True,
-    )
+"""
 
-with metric_col_2:
-    st.markdown(
-        """
-<div class="metric-card">
-<div class="metric-label">Mode</div>
-<div class="metric-value">{}</div>
-<div class="metric-subtitle">Current workflow</div>
-</div>
-        """.format(
-            st.session_state.mode
-        ),
-        unsafe_allow_html=True,
-    )
-
-with metric_col_3:
-    st.markdown(
-        """
-<div class="metric-card">
-<div class="metric-label">Model</div>
-<div class="metric-value">{}</div>
-<div class="metric-subtitle">Backend target</div>
-</div>
-        """.format(
-            st.session_state.model
-        ),
-        unsafe_allow_html=True,
-    )
+st.markdown(metrics_html, unsafe_allow_html=True)
 
 
-left_spacer, center_col, right_col = st.columns([0.01, 0.72, 0.27])
+left_spacer, center_col, right_spacer = st.columns([0.01, 0.98, 0.01])
+
+
 
 
 # -----------------------------
@@ -600,70 +580,85 @@ with center_col:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# -----------------------------
-# Right panel
-# -----------------------------
+# =============================================================================
+# RIGHT SIDEBAR
+# =============================================================================
 
-with right_col:
-    escaped_logs = html.escape("\n".join(st.session_state.logs[-8:]))
+escaped_logs = html.escape("\n".join(st.session_state.logs[-8:]))
 
-    st.markdown(
-        """
+quality_result = st.session_state.get("last_quality_result")
+
+quality_status = "unknown"
+quality_badge_color = "#67e8f9"
+quality_content = '<p class="right-muted">No quality check yet.</p>'
+
+if quality_result:
+    quality_status = quality_result.get("quality_status", "unknown")
+
+    if quality_status == "complete":
+        quality_badge_color = "#86efac"
+    elif quality_status == "partial":
+        quality_badge_color = "#fbbf24"
+    elif quality_status == "insufficient":
+        quality_badge_color = "#fb7185"
+
+    missing_fields = quality_result.get("missing_fields", [])
+    warnings = quality_result.get("warnings", [])
+    suggested_questions = quality_result.get("suggested_questions", [])
+
+    quality_lines = [
+        f'<p><strong>Status:</strong> {html.escape(str(quality_status))}</p>'
+    ]
+
+    if missing_fields:
+        quality_lines.append(f'<p><strong>Missing fields:</strong> {len(missing_fields)}</p>')
+        for field in missing_fields[:5]:
+            quality_lines.append(f'<div class="quality-item">• {html.escape(str(field))}</div>')
+
+    if warnings:
+        quality_lines.append(f'<p><strong>Warnings:</strong> {len(warnings)}</p>')
+        for warning in warnings[:5]:
+            quality_lines.append(f'<div class="quality-item">• {html.escape(str(warning))}</div>')
+
+    if suggested_questions:
+        quality_lines.append(f'<p><strong>Suggested questions:</strong> {len(suggested_questions)}</p>')
+        for question in suggested_questions[:3]:
+            quality_lines.append(f'<div class="quality-item">• {html.escape(str(question))}</div>')
+
+    quality_content = "\n".join(quality_lines)
+
+
+right_sidebar_html = dedent(f"""
+<div class="right-sidebar-fixed">
 <div class="panel-card system-log-panel">
 <div class="panel-title">
 <h3>System Log</h3>
 <span>Last 8 events</span>
 </div>
-<div class="log-box">{}</div>
+<div class="log-box">{escaped_logs}</div>
 </div>
-        """.format(
-            escaped_logs
-        ),
-        unsafe_allow_html=True,
-    )
 
-    st.markdown("### Latest JSON Quality")
-    render_quality_panel(st.session_state.last_quality_result)
+<div class="panel-card">
+<div class="panel-title">
+<h3>Latest JSON Quality</h3>
+<span style="color: {quality_badge_color}; font-weight: 700;">● {html.escape(str(quality_status))}</span>
+</div>
+<div class="quality-box">
+{quality_content}
+</div>
+</div>
 
-    st.markdown(
-        """
 <div class="panel-card">
 <div class="panel-title">
 <h3>Quick Actions</h3>
-<span>Static for now</span>
+<span>Ready</span>
+</div>
+<p class="right-muted">Actions available after a real analysis run.</p>
 </div>
 </div>
-        """,
-        unsafe_allow_html=True,
-    )
+""").strip()
 
-    button_indent_1, button_col_1 = st.columns([0.06, 0.95])
-
-    with button_col_1:
-        generate_report = st.button("Generate report", use_container_width=True)
-
-    if generate_report:
-        st.session_state.logs.append("[system] Generate report clicked")
-        st.toast("Report generation is already connected to the chat workflow.")
-
-    button_indent_2, button_col_2 = st.columns([0.06, 0.95])
-
-    with button_col_2:
-        export_markdown = st.button("Export markdown", use_container_width=True)
-
-    if export_markdown:
-        st.session_state.logs.append("[system] Export markdown clicked")
-        st.toast("Add file export wiring next.")
-
-    button_indent_3, button_col_3 = st.columns([0.06, 0.95])
-
-    with button_col_3:
-        run_scan = st.button("Run scan", use_container_width=True)
-
-    if run_scan:
-        st.session_state.logs.append("[system] Run scan clicked")
-        st.toast("Connect this to the analysis backend next.")
-
+st.markdown(right_sidebar_html, unsafe_allow_html=True)
 
 # -----------------------------
 # Footer + auto refresh

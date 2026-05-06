@@ -153,18 +153,15 @@ def build_analysis_response(result: dict) -> str:
     if result.get("cancelled"):
         return "Run stoppata correttamente."
 
-    response = (
-        "Errore durante l'analisi.\n\n"
-        f"```text\n{result.get('error')}\n```"
-    )
-
     quality_result = result.get("quality_result")
 
     if quality_result:
-        response += "\n\n"
-        response += build_quality_markdown(quality_result)
+        return build_quality_markdown(quality_result)
 
-    return response
+    return (
+        "Errore durante l'analisi.\n\n"
+        f"```text\n{result.get('error')}\n```"
+    )
 
 
 st.set_page_config(
@@ -264,7 +261,17 @@ if st.session_state.analysis_status in {"running", "stopping"}:
         elif result.get("cancelled"):
             st.session_state.logs.append("[system] Analysis cancelled")
         else:
-            st.session_state.logs.append("[assistant] Backend error")
+            if result.get("quality_result"):
+                quality_status = result.get("quality_result", {}).get(
+                    "quality_status",
+                    "unknown",
+                )
+                st.session_state.logs.append(
+                    f"[system] JSON quality check: {quality_status}"
+                )
+                st.session_state.logs.append("[assistant] JSON quality insufficient")
+            else:
+                st.session_state.logs.append("[assistant] Backend error")
 
         st.session_state.analysis_status = "idle"
         st.session_state.analysis_thread = None

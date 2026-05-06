@@ -1,0 +1,10 @@
+{
+  "quality_status": "complete",
+  "missing_fields": [],
+  "warnings": [
+    "System name is unknown."
+  ],
+  "suggested_questions": [
+    "What is the name of the chatbot system?"
+  ]
+}

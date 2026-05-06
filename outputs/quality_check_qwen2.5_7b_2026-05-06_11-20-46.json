@@ -1,0 +1,12 @@
+{
+  "quality_status": "complete",
+  "missing_fields": [],
+  "warnings": [
+    "System name is unknown.",
+    "Reference architecture is unknown."
+  ],
+  "suggested_questions": [
+    "What is the name of the chatbot system?",
+    "Can you describe the chatbot architecture, including model, UI, backend, APIs, RAG, databases, or external tools?"
+  ]
+}

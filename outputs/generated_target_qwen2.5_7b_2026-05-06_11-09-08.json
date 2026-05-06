@@ -1,0 +1,55 @@
+{
+  "system_name": "unknown",
+  "system_type": "LLM-based chatbot",
+  "description": "A customer support chatbot based on a local LLM via Ollama and an Open WebUI-like web interface.",
+  "reference_architecture": "local LLM, Ollama, web UI, system prompt, internal knowledge base, conversation history, application logs",
+  "users": [
+    "external customers",
+    "support operators",
+    "administrator"
+  ],
+  "components": [
+    "LLM local",
+    "Ollama",
+    "web UI",
+    "system prompt",
+    "internal knowledge base",
+    "conversation history",
+    "application logs"
+  ],
+  "data_handled": [
+    "customer names",
+    "emails",
+    "support messages",
+    "ticket IDs",
+    "conversational history",
+    "internal documentation"
+  ],
+  "security_assumptions": [
+    "no disclosure of personal data",
+    "no disclosure of sensitive information",
+    "no disclosure of system prompt",
+    "no disclosure of logs or irrelevant internal documentation"
+  ],
+  "attacker_model": {
+    "attacker_type": "external malicious user",
+    "access_level": "only chat access",
+    "capabilities": [
+      "send arbitrary messages",
+      "input long or repeated prompts",
+      "prompt injection",
+      "data extraction requests"
+    ],
+    "limitations": [
+      "no direct access to files, databases, logs, model weights, or admin configuration"
+    ]
+  },
+  "analysis_scope": [
+    "prompt injection",
+    "privacy leakage",
+    "hallucination",
+    "resource exhaustion",
+    "unauthorized access",
+    "information disclosure"
+  ]
+}

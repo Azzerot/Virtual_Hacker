@@ -520,8 +520,7 @@ with center_col:
             st.session_state.logs.append("[assistant] Demo response generated")
             st.session_state.messages.append({"role": "assistant", "content": response})
 
-            with st.chat_message("assistant"):
-                st.markdown(response)
+            st.rerun()
 
         else:
             if st.session_state.analysis_status in {"running", "stopping"}:

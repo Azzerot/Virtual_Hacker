@@ -926,8 +926,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="qwen2.5:7b",
-        help="Ollama model name, for example qwen2.5:7b or mistral:7b",
+        default="qwen2.5:32b",
+        help="Ollama model name, for example qwen2.5:32b or mistral:7b",
     )
 
     return parser.parse_args()

@@ -1,0 +1,14 @@
+{
+  "report_status": "coherent",
+  "coherence_score": 0.85,
+  "summary": "The generated risk report is well aligned with the input and generated JSON, covers all requested analysis_scope categories, respects constraints, and contains no unsupported claims.",
+  "unsupported_claims": [],
+  "missing_elements": [],
+  "contradictions": [],
+  "severity_issues": [],
+  "safety_concerns": [],
+  "warnings": [
+    "No security assumptions or expected protections are defined."
+  ],
+  "recommended_action": "accept"
+}

@@ -287,6 +287,28 @@ Formatting rules:
 - For "Evidence from input", cite only facts present in the provided JSON.
 - For "Defensive Mitigations", provide defensive recommendations only, without attack instructions, payloads, bypass steps, or exploit examples.
 
+You must generate one detailed risk section for each item in analysis_scope.
+ 
+Every analysis_scope item must appear either:
+1. as a dedicated risk section, or
+2. as an explicitly merged category inside another risk section.
+ 
+If two categories overlap, such as privacy leakage and information disclosure, you may merge them only if you explicitly state this in the risk title or description.
+ 
+Do not omit requested analysis_scope categories.
+
+You must generate one detailed risk section for each item in analysis_scope.
+ 
+Every analysis_scope item must appear either:
+1. as a dedicated risk section title, or
+2. as an explicitly merged category in a risk section title.
+ 
+If two categories overlap, such as "privacy leakage" and "information disclosure", you may merge them only by naming both categories in the same risk title, for example:
+"Privacy Leakage / Information Disclosure".
+ 
+Do not omit any requested analysis_scope category.
+Do not mention a requested analysis_scope category only in the overall considerations or conclusion.
+
 Use this exact report format:
 
 # Virtual Hacker Risk Report

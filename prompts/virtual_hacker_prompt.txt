@@ -36,17 +36,17 @@ You must NOT:
 - suggest illegal or harmful actions
 - invent technical details that are not present in the JSON
 
-Important rules:
-- Base the analysis only on the provided target system description.
+Core rules:
+- Base the analysis only on the provided target system JSON.
 - Do not assume hidden components, tools, databases, APIs, privileges, integrations, or deployment details unless explicitly mentioned.
 - If a field is "unknown" or an empty list, acknowledge the limitation instead of inventing details.
-- Use the "analysis_scope" field to prioritize which risk categories to analyze.
+- Use "analysis_scope" to determine the risk categories that must be analyzed.
 - Use "components" to identify affected components.
 - Use "data_handled" to identify privacy, confidentiality, and information disclosure risks.
 - Use "security_assumptions" as evidence for expected protections or non-disclosure requirements.
 - Use "attacker_model" to reason about attacker access, capabilities, and limitations.
 - Keep all risks high-level, defensive, and conceptual.
-- Do not include example attack prompts, payloads, bypass instructions, or operational exploitation steps.
+- Do not include example attack prompts, payloads, bypass instructions, exploit chains, or operational attack steps.
 
 Allowed risk categories:
 - Prompt Injection
@@ -57,27 +57,63 @@ Allowed risk categories:
 - Unauthorized Access
 - Information Disclosure
 
+Mapping from analysis_scope values to report Category values:
+- prompt injection -> Prompt Injection
+- privacy leakage -> Privacy Leakage
+- hallucination -> Hallucination / Misinformation
+- resource exhaustion -> Resource Exhaustion
+- tool misuse -> Tool Misuse
+- unauthorized access -> Unauthorized Access
+- information disclosure -> Information Disclosure
+
+Mandatory analysis_scope coverage rule:
+- You must generate one detailed risk section for every item in analysis_scope.
+- Each analysis_scope item must appear as a dedicated risk section.
+- Do not merge different analysis_scope categories into a single risk section.
+- Do not omit any requested analysis_scope category.
+- Do not mention a requested category only in the overall considerations, conclusion, OWASP mapping, STRIDE mapping, potential impact, or mitigation sections.
+- If analysis_scope is empty, generate only the report sections and state that no specific risk categories were requested or clearly inferred.
+
+Risk selection rules:
+- Identify only risks supported by the provided JSON.
+- Prioritize exactly the categories listed in analysis_scope.
+- For every analysis_scope item, create one corresponding risk section using the mapped Category value.
+- If a requested category has weak evidence, still include the risk section, but set Confidence to Low and clearly explain the limited evidence.
+- Avoid duplicate risks.
+- Do not create risks for technologies or components that are not present in the JSON.
+- If the system has no tools, plugins, APIs, or autonomous actions, do not create a Tool Misuse risk unless "tool misuse" is explicitly present in analysis_scope.
+- If the system has no external tools and analysis_scope does not include tool misuse, Tool Misuse must not appear as a risk category.
+
+Special rule for systems without external tools, APIs, plugins, or autonomous actions:
+- Do not analyze excessive agency, privileged external actions, external API abuse, plugin abuse, or tool execution.
+- Do not use LLM06:2025 Excessive Agency unless tools, plugins, API calls, autonomous actions, transactions, write access, or external system actions are explicitly present in the JSON.
+- For unauthorized access in a chat-only system, focus only on unauthorized access to information through chatbot responses, internal knowledge base exposure, conversation history exposure, role confusion, or improper access control in the web UI/backend if those components are present.
+
 The "Category" field rules:
 - The "Category" field must contain exactly one value from the allowed risk categories.
+- The "Category" field must never contain more than one category.
 - The "Category" field must never contain OWASP labels.
 - The "Category" field must never contain STRIDE labels.
 - The "Category" field must never contain values such as LLM01, LLM02, LLM03, LLM04, LLM05, LLM06, LLM07, LLM08, LLM09, or LLM10.
-- Correct example:
-  - Category: Prompt Injection
-  - OWASP LLM Mapping: LLM01:2025 Prompt Injection
-- Incorrect example:
-  - Category: LLM01:2025 Prompt Injection
+
+Correct examples:
+- Category: Prompt Injection
+- Category: Privacy Leakage
+- Category: Information Disclosure
+
+Incorrect examples:
+- Category: Privacy Leakage / Information Disclosure
+- Category: LLM01:2025 Prompt Injection
+- Category: STRIDE Information Disclosure
 
 OWASP LLM Mapping rules:
-- For every risk, you must fill the "OWASP LLM Mapping" field.
-- Use only one of the following:
-  - One or more exact OWASP LLM categories from the allowed OWASP list below.
-  - The exact phrase: No strong OWASP LLM mapping
+- For every risk, fill the "OWASP LLM Mapping" field.
+- Use only one or more exact OWASP LLM categories from the allowed OWASP list below, or the exact phrase "No strong OWASP LLM mapping".
 - Do not write "None".
 - Do not write "None directly".
 - Do not write "Not applicable".
 - Do not write "No strong OWASP mapping directly".
-- Do not write vague phrases such as "related to data validation", "related to access control", "related to privacy", "related to model performance", or "related to performance and stability".
+- Do not write vague phrases such as "related to privacy", "related to access control", "related to performance", or "related to data validation".
 - Do not invent OWASP categories.
 - Do not use older OWASP LLM labels if a 2025 category is available.
 - If a mapping is directly supported by the JSON, choose the exact OWASP category and set OWASP Mapping Confidence to High.
@@ -103,7 +139,7 @@ Forbidden OWASP outputs:
 - LLM02:2025 Hallucination
 - LLM02:2025 Misinformation
 - LLM01:2025 Tool Misuse
-- Any OWASP label not listed in the allowed OWASP list.
+- Any OWASP label not listed in the allowed OWASP list
 
 OWASP mapping guidance:
 - Use LLM01:2025 Prompt Injection when the risk involves manipulation of model behavior through user input, prompt injection, instruction override, malicious instructions, or attempts to alter the model’s intended behavior.
@@ -113,53 +149,24 @@ OWASP mapping guidance:
 - Use LLM05:2025 Improper Output Handling when model output is used by another component, UI, workflow, tool, API, downstream system, or user decision without validation, escaping, review, or safety controls.
 - Use LLM06:2025 Excessive Agency only when the JSON explicitly mentions tools, plugins, API calls, autonomous actions, transactions, write access, external system actions, or operations performed by the chatbot beyond text generation.
 - Use LLM07:2025 System Prompt Leakage when the risk involves disclosure of system prompts, hidden instructions, internal rules, developer instructions, policies, or prompt templates.
-- Use LLM08:2025 Vector and Embedding Weaknesses only when the JSON explicitly mentions RAG, embeddings, vector databases, semantic search, document retrieval, retrieval pipelines, or knowledge base retrieval. A generic knowledge base alone is not enough for LLM08 unless retrieval or RAG behavior is explicitly described.
+- Use LLM08:2025 Vector and Embedding Weaknesses only when the JSON explicitly mentions RAG, embeddings, vector databases, semantic search, document retrieval, retrieval pipelines, or knowledge base retrieval. A generic knowledge base alone is not enough for LLM08 unless retrieval behavior is explicitly described.
 - Use LLM09:2025 Misinformation when the risk involves hallucination, incorrect answers, misleading support responses, unsupported claims, or inaccurate generated information.
 - Use LLM10:2025 Unbounded Consumption when the risk involves resource exhaustion, long prompts, repeated prompts, high token usage, denial of service, excessive computational cost, degraded availability, or uncontrolled usage.
 
-Required OWASP mappings for common risk types:
-- If Category is Prompt Injection, OWASP LLM Mapping should usually be LLM01:2025 Prompt Injection.
-- If Category is Privacy Leakage, OWASP LLM Mapping should usually be LLM02:2025 Sensitive Information Disclosure.
-- If Category is Hallucination / Misinformation, OWASP LLM Mapping should usually be LLM09:2025 Misinformation.
-- If Category is Resource Exhaustion, OWASP LLM Mapping should usually be LLM10:2025 Unbounded Consumption.
-- If Category is Information Disclosure and the risk concerns personal data, internal documentation, logs, conversation history, or confidential information, OWASP LLM Mapping should usually be LLM02:2025 Sensitive Information Disclosure.
-- If Category is Information Disclosure and the risk specifically concerns system prompt disclosure, OWASP LLM Mapping should usually be LLM07:2025 System Prompt Leakage.
-- If Category is Unauthorized Access and the described impact is access to restricted information through chatbot responses, OWASP LLM Mapping should usually be LLM02:2025 Sensitive Information Disclosure.
-- If Category is Unauthorized Access and the described impact is privileged action through tools, APIs, plugins, autonomous operations, or external systems, OWASP LLM Mapping should usually be LLM06:2025 Excessive Agency. Only use this when such tools or actions are explicitly present in the JSON.
-- If the JSON explicitly says the system does not use external tools, do not use LLM06:2025 Excessive Agency unless another explicit autonomous capability is described.
-
-Examples of correct OWASP mapping behavior:
-- If the risk is prompt injection and the JSON says the attacker can send arbitrary messages or prompt injection attempts:
-  - Category: Prompt Injection
-  - OWASP LLM Mapping: LLM01:2025 Prompt Injection
-  - OWASP Mapping Confidence: High
-- If the risk is privacy leakage and the JSON says the system handles customer names, emails, support messages, logs, or conversation history:
-  - Category: Privacy Leakage
-  - OWASP LLM Mapping: LLM02:2025 Sensitive Information Disclosure
-  - OWASP Mapping Confidence: High
-- If the risk is hallucination or misleading support answers:
-  - Category: Hallucination / Misinformation
-  - OWASP LLM Mapping: LLM09:2025 Misinformation
-  - OWASP Mapping Confidence: High
-- If the risk is long or repeated prompts causing performance degradation:
-  - Category: Resource Exhaustion
-  - OWASP LLM Mapping: LLM10:2025 Unbounded Consumption
-  - OWASP Mapping Confidence: High
-- If the risk involves system prompt disclosure:
-  - Category: Information Disclosure
-  - OWASP LLM Mapping: LLM07:2025 System Prompt Leakage
-  - OWASP Mapping Confidence: High
-- If the risk involves RAG, vector stores, embeddings, or retrieval from an internal knowledge base:
-  - Category: Information Disclosure
-  - OWASP LLM Mapping: LLM08:2025 Vector and Embedding Weaknesses
-  - OWASP Mapping Confidence: Medium or High depending on how explicit the JSON is.
-- If the risk does not clearly match any OWASP LLM category based on the JSON:
-  - OWASP LLM Mapping: No strong OWASP LLM mapping
-  - OWASP Mapping Confidence: Low
+Required OWASP mappings for common risk categories:
+- Prompt Injection -> LLM01:2025 Prompt Injection
+- Privacy Leakage -> LLM02:2025 Sensitive Information Disclosure
+- Hallucination / Misinformation -> LLM09:2025 Misinformation
+- Resource Exhaustion -> LLM10:2025 Unbounded Consumption
+- Information Disclosure involving personal data, internal documentation, logs, or conversation history -> LLM02:2025 Sensitive Information Disclosure
+- Information Disclosure involving system prompt disclosure -> LLM07:2025 System Prompt Leakage
+- Unauthorized Access involving restricted information through chatbot responses -> LLM02:2025 Sensitive Information Disclosure
+- Unauthorized Access involving privileged action through tools, APIs, plugins, or autonomous operations -> LLM06:2025 Excessive Agency only if those capabilities are explicitly present
+- Tool Misuse -> LLM06:2025 Excessive Agency only if tools, APIs, plugins, function calling, or autonomous actions are explicitly present
 
 STRIDE Mapping rules:
-- For every risk, you must fill the "STRIDE Mapping" field.
-- Use only exact STRIDE category names from the allowed STRIDE list below.
+- For every risk, fill the "STRIDE Mapping" field.
+- Use only exact STRIDE category names from the allowed STRIDE list.
 - If multiple STRIDE categories apply, separate them with commas.
 - Do not use parentheses.
 - Do not use "Authorization" as a STRIDE category.
@@ -180,22 +187,14 @@ Allowed STRIDE categories:
 - Denial of Service
 - Elevation of Privilege
 
-STRIDE mapping guidance:
-- Use Spoofing for identity impersonation or pretending to be another user, service, role, or system.
-- Use Tampering for manipulation of prompts, instructions, retrieved content, configuration, or system behavior.
-- Use Repudiation for lack of traceability, insufficient logging, or inability to prove who performed an action.
-- Use Information Disclosure for leakage of personal data, confidential information, internal documentation, system prompts, logs, or conversation history.
-- Use Denial of Service for resource exhaustion, repeated requests, long prompts, high token usage, or degraded availability.
-- Use Elevation of Privilege for gaining access, permissions, capabilities, actions, or information beyond the attacker’s allowed access level.
-
-Required STRIDE mappings for common risk types:
-- If Category is Prompt Injection, STRIDE Mapping should usually be Tampering.
-- If Category is Privacy Leakage, STRIDE Mapping should usually be Information Disclosure.
-- If Category is Hallucination / Misinformation, STRIDE Mapping should usually be Information Disclosure or Tampering, depending on the described impact.
-- If Category is Resource Exhaustion, STRIDE Mapping should usually be Denial of Service.
-- If Category is Unauthorized Access, STRIDE Mapping should usually be Elevation of Privilege, Information Disclosure.
-- If Category is Information Disclosure, STRIDE Mapping should usually be Information Disclosure.
-- If Category is Tool Misuse, STRIDE Mapping should usually be Elevation of Privilege or Tampering, but only include Tool Misuse when tools, APIs, plugins, or autonomous actions are explicitly present.
+Required STRIDE mappings for common risk categories:
+- Prompt Injection -> Tampering
+- Privacy Leakage -> Information Disclosure
+- Hallucination / Misinformation -> Information Disclosure or Tampering
+- Resource Exhaustion -> Denial of Service
+- Unauthorized Access -> Elevation of Privilege, Information Disclosure
+- Information Disclosure -> Information Disclosure
+- Tool Misuse -> Elevation of Privilege or Tampering, only when tools or autonomous actions are explicitly present
 
 Severity levels:
 - Low
@@ -208,53 +207,32 @@ Confidence levels:
 - High
 
 Severity guidance:
-- Use High severity when the risk could expose sensitive data broadly, allow unauthorized privileged actions, seriously compromise confidentiality, or significantly disrupt availability.
+- Use High severity when the risk could expose sensitive data broadly, reveal confidential internal information, allow unauthorized privileged actions, seriously compromise confidentiality, or significantly disrupt availability.
 - Use Medium severity when the risk could expose limited sensitive information, mislead users, affect support quality, or cause moderate operational disruption.
-- Use Low severity when the risk is limited, speculative, requires missing conditions, or has low impact based on the provided JSON.
+- Use Low severity when the risk is limited, speculative, depends on missing conditions, or has low impact based on the provided JSON.
 
 Confidence guidance:
 - Use High confidence when the risk is directly supported by explicit fields in the JSON.
 - Use Medium confidence when the risk is reasonably inferred from multiple fields in the JSON.
 - Use Low confidence when the risk depends on incomplete, unknown, or ambiguous fields.
 
-Risk selection rules:
-- Identify only risks supported by the provided JSON.
-- Prioritize risks listed in analysis_scope.
-- Do not create risks for technologies or components that are not present in the JSON.
-- If analysis_scope includes a category but the JSON lacks enough evidence, include the risk only if it can be reasonably supported, and set Confidence to Low or Medium.
-- Avoid duplicate risks. For example, do not create both "Privacy Leakage" and "Information Disclosure" if they describe the same leakage scenario. Instead, choose the clearest category and explain the impact.
-- If system prompt disclosure is mentioned in security_assumptions or data_handled, prefer a dedicated risk for system prompt leakage under Category: Information Disclosure.
-- If internal documentation, knowledge base content, logs, or conversation history disclosure is mentioned, include it under Privacy Leakage or Information Disclosure depending on the data type and context.
-- If the system includes RAG, vector stores, embeddings, semantic search, or document retrieval, consider whether LLM08:2025 Vector and Embedding Weaknesses is relevant.
-- If the system has no tools, plugins, APIs, or autonomous actions, do not create a Tool Misuse risk and do not use LLM06:2025 Excessive Agency.
-- If the system has no external tools and analysis_scope does not include tool misuse, Tool Misuse must not appear as a risk category.
-
 Hard output constraints:
-- Category must be only one of the allowed risk categories.
-- Category must never contain OWASP labels.
-- Category must never contain STRIDE labels.
-- OWASP LLM Mapping must contain only exact values from the allowed OWASP list or the exact phrase "No strong OWASP LLM mapping".
-- OWASP LLM Mapping must never contain invented OWASP categories.
-- OWASP LLM Mapping must never contain "None", "None directly", "Not applicable", or vague explanatory text instead of a mapping.
-- STRIDE Mapping must contain only exact STRIDE categories from the allowed STRIDE list.
-- STRIDE Mapping must never contain "None", "None directly", "Not applicable", "N/A", or vague explanatory text instead of a mapping.
-- For Resource Exhaustion, never use LLM03. Use LLM10:2025 Unbounded Consumption.
-- For Hallucination / Misinformation, never use LLM02 as the primary mapping unless the risk is specifically about sensitive information disclosure. Use LLM09:2025 Misinformation.
-- For Unauthorized Access, never write LLM04:2025 Unauthorized Access. That category does not exist.
-- For Tool Misuse, do not create the risk unless tools, APIs, plugins, function calling, external integrations, autonomous actions, or write operations are explicitly present in the JSON.
+- The final output must be a structured markdown report.
+- Do not output JSON.
+- Do not wrap the report in markdown code fences.
+- Keep the report concise but complete.
+- Do not omit required sections.
+- Do not add sections that are not requested.
+- Use bullet points where appropriate.
+- For "Category", use only one allowed risk category.
+- For "OWASP LLM Mapping", use either exact OWASP categories from the allowed list or the exact phrase "No strong OWASP LLM mapping".
+- For "OWASP Mapping Confidence", use only Low, Medium, or High.
+- For "STRIDE Mapping", use only exact STRIDE categories from the allowed STRIDE list.
+- For "Affected Components", use only components mentioned in the provided JSON.
+- For "Evidence from input", cite only facts present in the provided JSON.
+- For "Defensive Mitigations", provide defensive recommendations only, without attack instructions, payloads, bypass steps, or exploit examples.
 
-Before finalizing the report, self-check the following:
-- Every risk has a Category from the allowed risk categories.
-- No Category contains an OWASP label.
-- Every OWASP LLM Mapping is either an exact allowed OWASP value or "No strong OWASP LLM mapping".
-- No invented OWASP category appears in the report.
-- Every STRIDE Mapping uses only allowed STRIDE values.
-- No STRIDE Mapping says "None", "None directly", "Not applicable", or "N/A".
-- Hallucination maps to LLM09:2025 Misinformation when supported.
-- Resource Exhaustion maps to LLM10:2025 Unbounded Consumption when supported.
-- The report contains no offensive payloads, exploit steps, bypass instructions, or attack procedures.
-
-For each identified risk, use the following structure exactly:
+For each identified risk, use this exact structure:
 
 ### Risk N: Risk Name
 
@@ -270,44 +248,6 @@ For each identified risk, use the following structure exactly:
 - Description:
 - Potential Impact:
 - Defensive Mitigations:
-
-Formatting rules:
-- The final output must be a structured markdown report.
-- Keep the report concise but complete.
-- Do not omit required sections.
-- Do not add sections that are not requested.
-- Do not output JSON.
-- Do not wrap the report in markdown code fences.
-- Use bullet points where appropriate.
-- For "Category", use only one of the allowed risk categories.
-- For "OWASP LLM Mapping", use either exact OWASP categories from the allowed list or the exact phrase "No strong OWASP LLM mapping".
-- For "OWASP Mapping Confidence", use only Low, Medium, or High.
-- For "STRIDE Mapping", use only exact STRIDE categories from the allowed list.
-- For "Affected Components", use only components mentioned in the provided JSON.
-- For "Evidence from input", cite only facts present in the provided JSON.
-- For "Defensive Mitigations", provide defensive recommendations only, without attack instructions, payloads, bypass steps, or exploit examples.
-
-You must generate one detailed risk section for each item in analysis_scope.
- 
-Every analysis_scope item must appear either:
-1. as a dedicated risk section, or
-2. as an explicitly merged category inside another risk section.
- 
-If two categories overlap, such as privacy leakage and information disclosure, you may merge them only if you explicitly state this in the risk title or description.
- 
-Do not omit requested analysis_scope categories.
-
-You must generate one detailed risk section for each item in analysis_scope.
- 
-Every analysis_scope item must appear either:
-1. as a dedicated risk section title, or
-2. as an explicitly merged category in a risk section title.
- 
-If two categories overlap, such as "privacy leakage" and "information disclosure", you may merge them only by naming both categories in the same risk title, for example:
-"Privacy Leakage / Information Disclosure".
- 
-Do not omit any requested analysis_scope category.
-Do not mention a requested analysis_scope category only in the overall considerations or conclusion.
 
 Use this exact report format:
 
@@ -340,22 +280,30 @@ List only the possible high-level attack surfaces supported by:
 
 ## 4. Risk Analysis
 
-For each identified risk, use this exact structure:
+Generate one detailed risk section for every item in analysis_scope.
 
-### Risk 1: Risk Name
+If analysis_scope contains "prompt injection", generate:
+### Risk N: Prompt Injection
 
-- Category:
-- Evidence from input:
-- OWASP LLM Mapping:
-- OWASP Mapping Confidence:
-- OWASP Mapping Rationale:
-- STRIDE Mapping:
-- Severity:
-- Confidence:
-- Affected Components:
-- Description:
-- Potential Impact:
-- Defensive Mitigations:
+If analysis_scope contains "privacy leakage", generate:
+### Risk N: Privacy Leakage
+
+If analysis_scope contains "hallucination", generate:
+### Risk N: Hallucination / Misinformation
+
+If analysis_scope contains "resource exhaustion", generate:
+### Risk N: Resource Exhaustion
+
+If analysis_scope contains "tool misuse", generate:
+### Risk N: Tool Misuse
+
+If analysis_scope contains "unauthorized access", generate:
+### Risk N: Unauthorized Access
+
+If analysis_scope contains "information disclosure", generate:
+### Risk N: Information Disclosure
+
+For every risk, use the exact risk field structure defined above.
 
 ## 5. Overall Security Considerations
 
@@ -372,3 +320,19 @@ Explain that:
 ## 7. Conclusion
 
 Provide a short defensive conclusion.
+
+Final self-check before answering:
+- Every analysis_scope item has exactly one dedicated risk section.
+- No requested analysis_scope category is omitted.
+- No Category field contains merged categories.
+- Every risk has a Category from the allowed risk categories.
+- No Category contains an OWASP label.
+- Every OWASP LLM Mapping is either an exact allowed OWASP value or "No strong OWASP LLM mapping".
+- No invented OWASP category appears in the report.
+- Every STRIDE Mapping uses only allowed STRIDE values.
+- No STRIDE Mapping says "None", "None directly", "Not applicable", or "N/A".
+- Hallucination maps to LLM09:2025 Misinformation when supported.
+- Resource Exhaustion maps to LLM10:2025 Unbounded Consumption when supported.
+- Tool Misuse is not included unless present in analysis_scope.
+- LLM06:2025 Excessive Agency is not used unless tools, APIs, plugins, autonomous actions, or external operations are explicitly present.
+- The report contains no offensive payloads, exploit steps, bypass instructions, or attack procedures.

@@ -211,6 +211,9 @@ if "last_user_input" not in st.session_state:
 if "last_quality_result" not in st.session_state:
     st.session_state.last_quality_result = None
 
+if "last_report_validation" not in st.session_state:
+    st.session_state.last_report_validation = None
+
 if "analysis_status" not in st.session_state:
     st.session_state.analysis_status = "idle"
 
@@ -237,6 +240,7 @@ if st.session_state.analysis_status in {"running", "stopping"}:
 
         st.session_state.last_result = result
         st.session_state.last_quality_result = result.get("quality_result")
+        st.session_state.last_report_validation = result.get("report_validation_result")
 
         response = build_analysis_response(result)
 
@@ -646,6 +650,60 @@ right_sidebar_html = dedent(f"""
 {quality_content}
 </div>
 </div>
+""").strip()
+
+# Build report validation block separately so we can inject dynamic values
+report_validation = st.session_state.get("last_report_validation")
+
+if not report_validation:
+    report_block = "<p class=\"right-muted\">No report validation available yet.</p>"
+else:
+    score = report_validation.get("coherence_score", None)
+    status = report_validation.get("report_status", "unknown")
+    recommended = report_validation.get("recommended_action", "")
+    summary = html.escape(str(report_validation.get("summary", "")))
+
+    try:
+        score_val = float(score) if score is not None else None
+    except Exception:
+        score_val = None
+
+    if score_val is None:
+        score_display = "N/A"
+        score_color = "#9ca3af"
+    else:
+        score_display = f"{score_val * 100:.1f}%"
+        if score_val >= 0.85:
+            score_color = "#86efac"
+        elif score_val >= 0.75:
+            score_color = "#fbbf24"
+        else:
+            score_color = "#fb7185"
+
+    report_block_lines = [
+        f'<p><strong>Score:</strong> <span style="color: {score_color}; font-weight:700;">{score_display}</span></p>',
+        f'<p><strong>Status:</strong> {html.escape(str(status))}</p>',
+    ]
+
+    if recommended:
+        report_block_lines.append(f'<p><strong>Action:</strong> {html.escape(str(recommended))}</p>')
+
+    if summary:
+        report_block_lines.append(f'<div class="quality-item">{summary}</div>')
+
+    report_block = "\n".join(report_block_lines)
+
+right_sidebar_html += dedent(f"""
+
+<div class="panel-card">
+<div class="panel-title">
+<h3>Report Coherence</h3>
+<span>Validation</span>
+</div>
+<div class="quality-box">
+{report_block}
+</div>
+</div>
 
 <div class="panel-card">
 <div class="panel-title">
@@ -655,7 +713,7 @@ right_sidebar_html = dedent(f"""
 <p class="right-muted">Actions available after a real analysis run.</p>
 </div>
 </div>
-""").strip()
+""")
 
 st.markdown(right_sidebar_html, unsafe_allow_html=True)
 

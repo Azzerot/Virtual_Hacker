@@ -313,8 +313,11 @@ with st.sidebar:
 
     model_options = [
         "Demo Mode",
-        "Qwen 2.5 7B",
-        "Mistral 7B",
+        "gemma3:27b",
+        "magistral:24b",
+        "qwen2.5:32b",
+        "qwen2.5:7b",
+        "mistral:7b",
     ]
 
     st.session_state.model = st.selectbox(
@@ -510,14 +513,17 @@ with center_col:
             st.markdown(user_input)
 
         model_map = {
-            "Qwen 2.5 7B": "qwen2.5:7b",
-            "Mistral 7B": "mistral:7b",
+            "gemma3:27b": "gemma3:27b",
+            "magistral:24b": "magistral:24b",
+            "qwen2.5:32b": "qwen2.5:32b",
+            "qwen2.5:7b": "qwen2.5:7b",
+            "mistral:7b": "mistral:7b",
         }
 
         if st.session_state.model == "Demo Mode":
             response = (
                 "Demo Mode attiva.\n\n"
-                "Seleziona **Qwen 2.5 7B** o **Mistral 7B** nella sidebar "
+                "Seleziona uno dei modelli configurati nella sidebar "
                 "per generare JSON, completeness check e report reali."
             )
 

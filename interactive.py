@@ -15,6 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 JSON_BUILDER_PROMPT_PATH = BASE_DIR / "prompts" / "json_builder_prompt.txt"
 VIRTUAL_HACKER_PROMPT_PATH = BASE_DIR / "prompts" / "virtual_hacker_prompt.txt"
+RISK_NORMALIZER_PROMPT_PATH = BASE_DIR / "prompts" / "risk_normalizer_prompt.txt"
 REPORT_VALIDATOR_PROMPT_PATH = BASE_DIR / "prompts" / "report_validator_prompt.txt"
 
 OUTPUT_DIR = BASE_DIR / "outputs"
@@ -35,46 +36,14 @@ TARGET_SYSTEM_SCHEMA = {
         "analysis_scope",
     ],
     "properties": {
-        "system_name": {
-            "type": "string",
-            "minLength": 1,
-        },
-        "system_type": {
-            "type": "string",
-            "minLength": 1,
-        },
-        "description": {
-            "type": "string",
-            "minLength": 1,
-        },
-        "reference_architecture": {
-            "type": "string",
-            "minLength": 1,
-        },
-        "users": {
-            "type": "array",
-            "items": {
-                "type": "string",
-            },
-        },
-        "components": {
-            "type": "array",
-            "items": {
-                "type": "string",
-            },
-        },
-        "data_handled": {
-            "type": "array",
-            "items": {
-                "type": "string",
-            },
-        },
-        "security_assumptions": {
-            "type": "array",
-            "items": {
-                "type": "string",
-            },
-        },
+        "system_name": {"type": "string", "minLength": 1},
+        "system_type": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "reference_architecture": {"type": "string", "minLength": 1},
+        "users": {"type": "array", "items": {"type": "string"}},
+        "components": {"type": "array", "items": {"type": "string"}},
+        "data_handled": {"type": "array", "items": {"type": "string"}},
+        "security_assumptions": {"type": "array", "items": {"type": "string"}},
         "attacker_model": {
             "type": "object",
             "required": [
@@ -84,26 +53,10 @@ TARGET_SYSTEM_SCHEMA = {
                 "limitations",
             ],
             "properties": {
-                "attacker_type": {
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "access_level": {
-                    "type": "string",
-                    "minLength": 1,
-                },
-                "capabilities": {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                    },
-                },
-                "limitations": {
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                    },
-                },
+                "attacker_type": {"type": "string", "minLength": 1},
+                "access_level": {"type": "string", "minLength": 1},
+                "capabilities": {"type": "array", "items": {"type": "string"}},
+                "limitations": {"type": "array", "items": {"type": "string"}},
             },
             "additionalProperties": False,
         },
@@ -189,14 +142,6 @@ def clean_string_list(value: Any) -> list[str]:
 
 
 def normalize_target_json(target_system: dict) -> dict:
-    """
-    Ensures that the generated target JSON contains all required keys
-    with safe default values before schema validation.
-
-    This prevents weak model output from failing immediately at schema validation.
-    The quality checker will later decide whether the information is sufficient.
-    """
-
     if not isinstance(target_system, dict):
         target_system = {}
 
@@ -232,9 +177,7 @@ def normalize_target_json(target_system: dict) -> dict:
 
     analysis_scope = clean_string_list(normalized.get("analysis_scope"))
     normalized["analysis_scope"] = [
-        item
-        for item in analysis_scope
-        if item in ALLOWED_ANALYSIS_SCOPE
+        item for item in analysis_scope if item in ALLOWED_ANALYSIS_SCOPE
     ]
 
     attacker_model = normalized.get("attacker_model")
@@ -268,14 +211,6 @@ def enrich_target_json_from_input(
     target_system: dict,
     natural_description: str,
 ) -> dict:
-    """
-    Adds safe fallback values from the original user input when the model
-    returns valid but incomplete JSON.
-
-    This does not invent information: it only reuses the user's original text
-    or already extracted components.
-    """
-
     enriched = dict(target_system)
     cleaned_input = natural_description.strip()
 
@@ -426,15 +361,6 @@ def check_json_completeness(target_system: dict) -> dict:
 
 
 def should_block_risk_report(quality_result: dict) -> bool:
-    """
-    Blocks the risk report only when fields needed for meaningful threat analysis
-    are missing.
-
-    description and reference_architecture may still produce warnings/partial status,
-    but they do not block the report by themselves if enough structured security
-    information exists.
-    """
-
     blocking_fields = {
         "components",
         "data_handled",
@@ -489,7 +415,12 @@ def load_text_file(path: Path) -> str:
 
 
 def safe_filename(text: str) -> str:
-    return text.replace(":", "_").replace("/", "_").replace("\\", "_").replace(" ", "_")
+    return (
+        text.replace(":", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace(" ", "_")
+    )
 
 
 def validate_target_json(target_system: dict) -> None:
@@ -525,12 +456,27 @@ def extract_json_from_model_output(raw_output: str) -> dict:
     try:
         parsed_json = json.loads(cleaned_output)
 
-    except json.JSONDecodeError as e:
-        raise ValueError(
-            "The model did not return valid JSON.\n"
-            f"JSON parsing error: {e.msg} at line {e.lineno}, column {e.colno}\n\n"
-            f"Raw model output:\n{raw_output}"
-        ) from e
+    except json.JSONDecodeError:
+        start = cleaned_output.find("{")
+        end = cleaned_output.rfind("}")
+
+        if start == -1 or end == -1 or end <= start:
+            raise ValueError(
+                "The model did not return valid JSON and no JSON object could be extracted.\n\n"
+                f"Raw model output:\n{raw_output}"
+            )
+
+        possible_json = cleaned_output[start : end + 1]
+
+        try:
+            parsed_json = json.loads(possible_json)
+
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                "The model did not return valid JSON.\n"
+                f"JSON parsing error: {e.msg} at line {e.lineno}, column {e.colno}\n\n"
+                f"Raw model output:\n{raw_output}"
+            ) from e
 
     if not isinstance(parsed_json, dict):
         raise ValueError(
@@ -541,7 +487,6 @@ def extract_json_from_model_output(raw_output: str) -> dict:
 
 
 def _kill_ollama_on_stop(stop_event: Event):
-    """Monitor stop_event and kill Ollama process when triggered."""
     stop_event.wait()
 
     if stop_event.is_set():
@@ -579,14 +524,8 @@ def call_ollama(
         response = ollama.chat(
             model=model_name,
             messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": user_message,
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
             ],
         )
 
@@ -605,14 +544,8 @@ def call_ollama(
         streamed_response = ollama.chat(
             model=model_name,
             messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": user_message,
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
             ],
             stream=True,
         )
@@ -711,6 +644,50 @@ def generate_risk_report(
         stop_event=stop_event,
     )
 
+
+def build_risk_normalization_message(
+    target_system: dict,
+    quality_result: dict,
+    risk_report: str,
+) -> str:
+    target_json = json.dumps(target_system, indent=2, ensure_ascii=False)
+    quality_json = json.dumps(quality_result, indent=2, ensure_ascii=False)
+
+    return (
+        "Normalize the following defensive LLM security risk report.\n\n"
+        "Generated target JSON:\n"
+        f"{target_json}\n\n"
+        "JSON quality result:\n"
+        f"{quality_json}\n\n"
+        "Generated risk report:\n"
+        f"{risk_report}\n\n"
+        "Return only the normalized markdown report."
+    )
+
+
+def normalize_risk_report(
+    model_name: str,
+    target_system: dict,
+    quality_result: dict,
+    risk_report: str,
+    stop_event: Optional[Event] = None,
+) -> str:
+    risk_normalizer_prompt = load_text_file(RISK_NORMALIZER_PROMPT_PATH)
+
+    user_message = build_risk_normalization_message(
+        target_system=target_system,
+        quality_result=quality_result,
+        risk_report=risk_report,
+    )
+
+    return call_ollama(
+        model_name,
+        risk_normalizer_prompt,
+        user_message,
+        stop_event=stop_event,
+    )
+
+
 def validate_risk_report(
     model_name: str,
     natural_description: str,
@@ -747,12 +724,14 @@ def validate_risk_report(
 
     return extract_json_from_model_output(raw_output)
 
+
 def save_outputs(
     model_name: str,
     target_system: dict,
     risk_report: str,
     quality_result: Optional[dict] = None,
     report_validation_result: Optional[dict] = None,
+    raw_risk_report: Optional[str] = None,
 ) -> dict:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -763,6 +742,7 @@ def save_outputs(
     report_path = OUTPUT_DIR / f"risk_report_{model_file_name}_{timestamp}.md"
     quality_path = OUTPUT_DIR / f"quality_check_{model_file_name}_{timestamp}.json"
     report_validation_path = OUTPUT_DIR / f"report_validation_{model_file_name}_{timestamp}.json"
+    raw_report_path = OUTPUT_DIR / f"raw_risk_report_{model_file_name}_{timestamp}.md"
 
     generated_target_path.write_text(
         json.dumps(target_system, indent=2, ensure_ascii=False),
@@ -781,13 +761,16 @@ def save_outputs(
             encoding="utf-8",
         )
 
+    if raw_risk_report is not None:
+        raw_report_path.write_text(raw_risk_report, encoding="utf-8")
+
     quality_markdown = build_quality_markdown(quality_result)
 
     final_report = f"""<!--
 Generated by Virtual Hacker
 Model: {model_name}
 Timestamp: {timestamp}
-Input mode: natural language -> generated JSON -> normalized JSON -> enriched JSON -> validated JSON -> completeness check -> risk report -> report validation
+Input mode: natural language -> generated JSON -> normalized JSON -> enriched JSON -> validated JSON -> completeness check -> risk report -> risk normalization -> report validation
 -->
 
 {quality_markdown}
@@ -808,6 +791,9 @@ Input mode: natural language -> generated JSON -> normalized JSON -> enriched JS
 
     if report_validation_result is not None:
         result["report_validation_path"] = str(report_validation_path)
+
+    if raw_risk_report is not None:
+        result["raw_report_path"] = str(raw_report_path)
 
     return result
 
@@ -832,7 +818,7 @@ def build_insufficient_error_message(quality_result: dict) -> str:
 
 def run_virtual_hacker_analysis(
     natural_description: str,
-    model_name: str = "qwen2.5:7b",
+    model_name: str = "qwen2.5:32b",
     stop_event: Optional[Event] = None,
 ) -> dict:
     natural_description = natural_description.strip()
@@ -864,9 +850,19 @@ def run_virtual_hacker_analysis(
                 "quality_result": quality_result,
             }
 
-        risk_report = generate_risk_report(
+        raw_risk_report = generate_risk_report(
             model_name,
             target_system,
+            stop_event=stop_event,
+        )
+
+        _raise_if_cancelled(stop_event)
+
+        normalized_risk_report = normalize_risk_report(
+            model_name=model_name,
+            target_system=target_system,
+            quality_result=quality_result,
+            risk_report=raw_risk_report,
             stop_event=stop_event,
         )
 
@@ -877,7 +873,7 @@ def run_virtual_hacker_analysis(
             natural_description=natural_description,
             target_system=target_system,
             quality_result=quality_result,
-            risk_report=risk_report,
+            risk_report=normalized_risk_report,
             stop_event=stop_event,
         )
 
@@ -886,9 +882,10 @@ def run_virtual_hacker_analysis(
         output_paths = save_outputs(
             model_name=model_name,
             target_system=target_system,
-            risk_report=risk_report,
+            risk_report=normalized_risk_report,
             quality_result=quality_result,
             report_validation_result=report_validation_result,
+            raw_risk_report=raw_risk_report,
         )
 
         return {
@@ -896,10 +893,12 @@ def run_virtual_hacker_analysis(
             "target_system": target_system,
             "quality_result": quality_result,
             "report_validation_result": report_validation_result,
-            "risk_report": risk_report,
+            "risk_report": normalized_risk_report,
+            "raw_risk_report": raw_risk_report,
             "json_path": output_paths["json_path"],
             "quality_path": output_paths.get("quality_path"),
             "report_validation_path": output_paths.get("report_validation_path"),
+            "raw_report_path": output_paths.get("raw_report_path"),
             "report_path": output_paths["report_path"],
             "timestamp": output_paths["timestamp"],
         }
@@ -985,10 +984,13 @@ def main() -> None:
     if result.get("quality_path"):
         print(f"Quality check saved in: {result['quality_path']}")
 
+    if result.get("raw_report_path"):
+        print(f"Raw risk report saved in: {result['raw_report_path']}")
+
     if result.get("report_validation_path"):
         print(f"Report validation saved in: {result['report_validation_path']}")
 
-    print(f"Risk report saved in: {result['report_path']}")
+    print(f"Normalized risk report saved in: {result['report_path']}")
 
 
 if __name__ == "__main__":

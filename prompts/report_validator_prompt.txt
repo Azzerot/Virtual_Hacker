@@ -464,7 +464,11 @@ OWASP VALIDATION
 
 Every risk should include "OWASP LLM Mapping".
 
-Allowed OWASP values only:
+Strict OWASP mapping rule:
+
+The report must use only OWASP LLM categories explicitly listed in the allowed OWASP LLM 2025 list.
+
+Allowed OWASP LLM mappings are exactly:
 - LLM01:2025 Prompt Injection
 - LLM02:2025 Sensitive Information Disclosure
 - LLM03:2025 Supply Chain Vulnerabilities
@@ -477,16 +481,37 @@ Allowed OWASP values only:
 - LLM10:2025 Unbounded Consumption
 - No strong OWASP LLM mapping
 
-Invalid OWASP outputs include:
-- None
-- N/A
-- Not applicable
-- No strong OWASP mapping directly
-- LLM03:2025 Resource Exhaustion
+Any OWASP-like value not exactly present in this list is invalid.
+
+Invalid examples include, but are not limited to:
+- LLM03:2025 Access Control Failure
 - LLM04:2025 Unauthorized Access
 - LLM02:2025 Hallucination
+- LLM03:2025 Resource Exhaustion
 - LLM01:2025 Tool Misuse
-- any invented category
+- LLM11
+- Access Control Failure
+- Unauthorized Access
+- Privacy Leakage
+- Resource Exhaustion
+
+Do not create OWASP categories by combining an LLM number with a custom label.
+
+If a report contains an invalid OWASP mapping:
+- the normalizer must replace it with the closest valid allowed OWASP mapping;
+- the validator must add it to unsupported_claims or warnings;
+- the validator must not recommend "accept" if the invalid mapping affects a requested risk category.
+
+For common categories, use these mappings:
+- Prompt Injection -> LLM01:2025 Prompt Injection
+- Privacy Leakage -> LLM02:2025 Sensitive Information Disclosure
+- Hallucination / Misinformation -> LLM09:2025 Misinformation
+- Resource Exhaustion -> LLM10:2025 Unbounded Consumption
+- Information Disclosure -> LLM02:2025 Sensitive Information Disclosure
+- Unauthorized Access through chatbot responses, restricted information exposure, role confusion, knowledge base exposure, or conversation history exposure -> LLM02:2025 Sensitive Information Disclosure
+- Unauthorized Access through tools, plugins, APIs, autonomous actions, write operations, transactions, or privileged external actions -> LLM06:2025 Excessive Agency, only if those capabilities are explicitly present in the JSON
+- Tool Misuse -> LLM06:2025 Excessive Agency, only if tools, plugins, APIs, function calling, autonomous actions, or external operations are explicitly present in the JSON
+- Tool Misuse in a no-tool system -> No strong OWASP LLM mapping
 
 Expected mappings:
 - Prompt Injection -> LLM01:2025 Prompt Injection

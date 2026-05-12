@@ -315,6 +315,7 @@ with st.sidebar:
         "Qwen3:32b",
         "Deepseek-R1:32b",
         "Gemma3:27b",
+        "gpt-oss:20b",
     ]
 
     st.session_state.model = st.selectbox(

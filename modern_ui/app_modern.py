@@ -312,12 +312,9 @@ with st.sidebar:
     st.markdown(f"**Mode:** {st.session_state.mode}")
 
     model_options = [
-        "Demo Mode",
-        "gemma3:27b",
-        "magistral:24b",
-        "qwen2.5:32b",
-        "qwen2.5:7b",
-        "mistral:7b",
+        "Qwen3:32b",
+        "Deepseek-R1:32b",
+        "Gemma3:27b",
     ]
 
     st.session_state.model = st.selectbox(
@@ -513,11 +510,9 @@ with center_col:
             st.markdown(user_input)
 
         model_map = {
-            "gemma3:27b": "gemma3:27b",
-            "magistral:24b": "magistral:24b",
-            "qwen2.5:32b": "qwen2.5:32b",
-            "qwen2.5:7b": "qwen2.5:7b",
-            "mistral:7b": "mistral:7b",
+            "Qwen3:32b": "qwen3:32b",
+            "Deepseek-R1:32b": "deepseek-r1:32b",
+            "Gemma3:27b": "gemma3:27b",
         }
 
         if st.session_state.model == "Demo Mode":
@@ -546,7 +541,7 @@ with center_col:
                     st.markdown(response)
 
             else:
-                ollama_model = model_map.get(st.session_state.model, "qwen2.5:7b")
+                ollama_model = model_map.get(st.session_state.model, "qwen3:32b")
 
                 st.session_state.analysis_status = "running"
                 st.session_state.analysis_stop_event = threading.Event()

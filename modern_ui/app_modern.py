@@ -710,14 +710,6 @@ right_sidebar_html += dedent(f"""
 {report_block}
 </div>
 </div>
-
-<div class="panel-card">
-<div class="panel-title">
-<h3>Quick Actions</h3>
-<span>Ready</span>
-</div>
-<p class="right-muted">Actions available after a real analysis run.</p>
-</div>
 </div>
 """)
 

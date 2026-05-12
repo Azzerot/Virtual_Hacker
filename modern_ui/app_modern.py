@@ -315,7 +315,7 @@ with st.sidebar:
         "Qwen3:32b",
         "Deepseek-R1:32b",
         "Gemma3:27b",
-        "gpt-oss:20b",
+        "GPT-OSS:20b",
     ]
 
     st.session_state.model = st.selectbox(
@@ -514,6 +514,7 @@ with center_col:
             "Qwen3:32b": "qwen3:32b",
             "Deepseek-R1:32b": "deepseek-r1:32b",
             "Gemma3:27b": "gemma3:27b",
+            "GPT-OSS:20b": "gpt-oss:20b",
         }
 
         if st.session_state.model == "Demo Mode":

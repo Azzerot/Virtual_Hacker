@@ -182,7 +182,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Ciao, sono **Virtual Hacker**. Descrivi il target, il contesto o l'obiettivo dell'analisi.",
+            "content": "Ciao, sono **Virtual Hacker**. Prima di iniziare, ricordati di scegliere il modello che preferisci dalla colonna a sinistra. Descrivi il target, il contesto o l'obiettivo dell'analisi.",
         }
     ]
 
@@ -375,7 +375,7 @@ if clear_chat:
     st.session_state.messages = [
         {
             "role": "assistant",
-            "content": "Ciao, sono **Virtual Hacker**. Descrivi il target, il contesto o l'obiettivo dell'analisi.",
+            "content": "Ciao, sono **Virtual Hacker**. Prima di iniziare, ricordati di scegliere il modello che preferisci dalla colonna a sinistra. Descrivi il target, il contesto o l'obiettivo dell'analisi.",
         }
     ]
 

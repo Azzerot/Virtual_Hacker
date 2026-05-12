@@ -4,7 +4,6 @@ from pathlib import Path
 from datetime import datetime
 from threading import Event
 import time
-import subprocess
 from typing import Optional, Any
 
 import ollama
@@ -488,27 +487,6 @@ def extract_json_from_model_output(raw_output: str) -> dict:
     return parsed_json
 
 
-def _kill_ollama_on_stop(stop_event: Event):
-    stop_event.wait()
-
-    if stop_event.is_set():
-        try:
-            subprocess.run(
-                ["taskkill", "/F", "/T", "/IM", "ollama.exe"],
-                capture_output=True,
-                timeout=2,
-            )
-        except Exception:
-            try:
-                subprocess.run(
-                    ["pkill", "-f", "ollama"],
-                    capture_output=True,
-                    timeout=2,
-                )
-            except Exception:
-                pass
-
-
 def _raise_if_cancelled(stop_event: Optional[Event]) -> None:
     if stop_event is not None and stop_event.is_set():
         raise RuntimeError("Analysis stopped by user.")
@@ -532,15 +510,6 @@ def call_ollama(
         )
 
         return response["message"]["content"]
-
-    from threading import Thread
-
-    kill_thread = Thread(
-        target=_kill_ollama_on_stop,
-        args=(stop_event,),
-        daemon=True,
-    )
-    kill_thread.start()
 
     try:
         streamed_response = ollama.chat(

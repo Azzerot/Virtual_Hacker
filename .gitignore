@@ -4,10 +4,26 @@ outputs/
 # Python cache
 __pycache__/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+*.egg-info/
 
 # Virtual environments
 .venv/
 venv/
+
+# Environment files
+.env
+.env.*
+
+# Notebook checkpoints
+.ipynb_checkpoints/
 
 # IDE
 .vscode/

@@ -1,5 +1,9 @@
 # Virtual Hacker
 
+<p align="center">
+	<img src="Logo.png" alt="Virtual Hacker logo" width="420" />
+</p>
+
 Virtual Hacker is a demo project for the defensive analysis of LLM-based chatbots.
 
 Given a structured target description, the system evaluates possible risks such as prompt injection, privacy leakage, hallucination, resource exhaustion, and tool misuse, then produces a final report with severity, observations, and defensive mitigations.

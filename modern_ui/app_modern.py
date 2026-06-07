@@ -6,6 +6,7 @@ import queue
 import sys
 import threading
 import time
+from typing import Optional
 
 import streamlit as st
 
@@ -64,7 +65,7 @@ def _request_stop_run():
     st.rerun()
 
 
-def build_quality_markdown(quality_result: dict | None) -> str:
+def build_quality_markdown(quality_result: Optional[dict]) -> str:
     if not quality_result:
         return ""
 
@@ -93,7 +94,7 @@ def build_quality_markdown(quality_result: dict | None) -> str:
     return quality_markdown
 
 
-def render_quality_panel(quality_result: dict | None) -> None:
+def render_quality_panel(quality_result: Optional[dict]) -> None:
     if not quality_result:
         st.info("No JSON quality check available yet.")
         return

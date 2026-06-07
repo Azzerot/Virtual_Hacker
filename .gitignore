@@ -17,6 +17,7 @@ dist/
 # Virtual environments
 .venv/
 venv/
+.venv311
 
 # Environment files
 .env
